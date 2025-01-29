@@ -159,10 +159,15 @@ export class CanvasEditor {
    * Draws the bounding box + corner handles for the active node.
    */
   private drawTransformer(node: Node) {
-    const { x, y, width, height } = node.getBounds();
+    const { x, y, width, height, rotation } = node.getBounds();
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
 
     // Draw bounding box (purple)
     this.ctx.save();
+    this.ctx.translate(centerX, centerY);
+    this.ctx.rotate(rotation);
+    this.ctx.translate(-centerX, -centerY);
     this.ctx.lineWidth = 2;
     this.ctx.strokeStyle = "purple";
     this.ctx.strokeRect(x, y, width, height);
@@ -174,24 +179,36 @@ export class CanvasEditor {
     //   Bottom-right => rotate
     //   Bottom-left  => resize
     //
-    // We’ll draw them as circles with an icon in each.
-    const topLeft = { x, y };
-    const topRight = { x: x + width, y };
-    const bottomRight = { x: x + width, y: y + height };
-    const bottomLeft = { x, y: y + height };
+    // Define handle positions in local (unrotated) space
+    const handles = [
+      { x, y, icon: this.handleIcons.translate },
+      { x: x + width, y, icon: this.handleIcons.delete },
+      { x: x + width, y: y + height, icon: this.handleIcons.rotate },
+      { x, y: y + height, icon: this.handleIcons.resize },
+    ];
 
-    // circle + icon
-    this.drawHandle(topLeft.x, topLeft.y, this.handleIcons.translate);
-    this.drawHandle(topRight.x, topRight.y, this.handleIcons.delete);
-    this.drawHandle(bottomRight.x, bottomRight.y, this.handleIcons.rotate);
-    this.drawHandle(bottomLeft.x, bottomLeft.y, this.handleIcons.resize);
+    // Rotate and draw handles
+    handles.forEach(({ x, y, icon }) => {
+      this.drawHandle(x, y, icon, rotation, centerX, centerY);
+    });
   }
 
   /**
    * Draws a single handle (circle + icon).
    */
-  private drawHandle(cx: number, cy: number, icon: HTMLImageElement) {
+  private drawHandle(
+    cx: number,
+    cy: number,
+    icon: HTMLImageElement,
+    angle: number,
+    centerX: number,
+    centerY: number
+  ) {
     this.ctx.save();
+    // Rotate handle position
+    this.ctx.translate(centerX, centerY);
+    this.ctx.rotate(angle);
+    this.ctx.translate(-centerX, -centerY);
 
     // Draw circle
     this.ctx.beginPath();
@@ -224,27 +241,31 @@ export class CanvasEditor {
     mx: number,
     my: number
   ): HandleType | null {
-    const { x, y, width, height } = node.getBounds();
-    const topLeft = { x, y };
-    const topRight = { x: x + width, y };
-    const bottomRight = { x: x + width, y: y + height };
-    const bottomLeft = { x, y: y + height };
+    const { x, y, width, height, rotation } = node.getBounds();
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
 
-    // Utility to check if (mx,my) is inside the handle’s circle
-    const hitHandle = (hx: number, hy: number) => {
-      const dx = mx - hx;
-      const dy = my - hy;
-      return dx * dx + dy * dy <= this.handleRadius * this.handleRadius;
-    };
+    // Convert mouse position into node's local (unrotated) space
+    const cos = Math.cos(-rotation);
+    const sin = Math.sin(-rotation);
+    const localX = cos * (mx - centerX) - sin * (my - centerY) + centerX;
+    const localY = sin * (mx - centerX) + cos * (my - centerY) + centerY;
 
-    // Top-left => translate
-    if (hitHandle(topLeft.x, topLeft.y)) return "translate";
-    // Top-right => delete
-    if (hitHandle(topRight.x, topRight.y)) return "delete";
-    // Bottom-right => rotate
-    if (hitHandle(bottomRight.x, bottomRight.y)) return "rotate";
-    // Bottom-left => resize
-    if (hitHandle(bottomLeft.x, bottomLeft.y)) return "resize";
+    // Define handle positions in local space
+    const handles = [
+      { x, y, type: "translate" },
+      { x: x + width, y, type: "delete" },
+      { x: x + width, y: y + height, type: "rotate" },
+      { x, y: y + height, type: "resize" },
+    ];
+
+    // Check if the transformed mouse position is within any handle
+    for (const handle of handles) {
+      const distance = Math.hypot(localX - handle.x, localY - handle.y);
+      if (distance <= this.handleRadius) {
+        return handle.type as HandleType;
+      }
+    }
 
     return null;
   }
@@ -319,7 +340,13 @@ abstract class Node {
 
   abstract draw(ctx: CanvasRenderingContext2D): void;
   abstract contains(x: number, y: number): boolean;
-  abstract getBounds(): { x: number; y: number; width: number; height: number };
+  abstract getBounds(): {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+  };
 
   move(dx: number, dy: number) {
     this.x += dx;
@@ -395,6 +422,7 @@ class TextNode extends Node {
       y: this.y - scaledHeight, // so text baseline sits near y
       width: scaledWidth,
       height: scaledHeight,
+      rotation: this.rotation,
     };
   }
 }
@@ -443,6 +471,7 @@ class ImageNode extends Node {
       y: this.y,
       width: scaledWidth,
       height: scaledHeight,
+      rotation: this.rotation,
     };
   }
 }
