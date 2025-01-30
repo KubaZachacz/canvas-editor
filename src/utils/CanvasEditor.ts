@@ -378,14 +378,13 @@ class TextNode extends Node {
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    // Save and apply transformation
     ctx.save();
 
-    // get size for bounding
+    // Set font and measure text
     ctx.font = `${this.fontSize}px ${this.fontFamily}`;
     this.textWidth = ctx.measureText(this.text).width;
 
-    // Move to (this.x, this.y), then rotate and scale
+    // Compute center and transformations
     const { x, y, width, height } = this.getBounds();
     const cx = x + width / 2;
     const cy = y + height / 2;
@@ -394,32 +393,40 @@ class TextNode extends Node {
     ctx.rotate(this.rotation);
     ctx.scale(this.scaleX, this.scaleY);
 
-    // Draw text centered at 0,0
+    // Draw text centered
     ctx.fillStyle = "black";
-    // Because our bounding box expects top-left at x,y -  we align the text
-    // so that (x, y) is effectively the top-left. However, for correct
-    // rotation about the center, we shift by half the bounding box:
-    ctx.fillText(this.text, -width / 2, height / 2 - 5);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(this.text, 0, 0);
 
     ctx.restore();
   }
 
   contains(mx: number, my: number) {
-    // Simple bounding box check in unrotated space:
-    // Get bounding box
-    const { x, y, width, height } = this.getBounds();
-    return mx >= x && mx <= x + width && my >= y && my <= y + height;
+    const { x, y, width, height, rotation } = this.getBounds();
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+
+    // Convert mouse position to local (unrotated) space
+    const cos = Math.cos(-rotation);
+    const sin = Math.sin(-rotation);
+    const localX = cos * (mx - centerX) - sin * (my - centerY) + centerX;
+    const localY = sin * (mx - centerX) + cos * (my - centerY) + centerY;
+
+    // Check if the transformed point is within bounds
+    return (
+      localX >= x && localX <= x + width && localY >= y && localY <= y + height
+    );
   }
 
   getBounds() {
-    // Approx bounding box: textWidth x fontSize
-    // Use scale to expand the bounding box
-    // Rotational bounding box is not accounted for, so it’s an approximation.
+    // Adjust for scaled text dimensions
     const scaledWidth = this.textWidth * this.scaleX;
     const scaledHeight = this.fontSize * this.scaleY;
+
     return {
-      x: this.x,
-      y: this.y - scaledHeight, // so text baseline sits near y
+      x: this.x - scaledWidth / 2,
+      y: this.y - scaledHeight / 2,
       width: scaledWidth,
       height: scaledHeight,
       rotation: this.rotation,
@@ -437,19 +444,25 @@ class ImageNode extends Node {
 
   draw(ctx: CanvasRenderingContext2D) {
     if (!this.img.complete) return;
-    const { width, height } = this.getBounds();
+
+    const bounds = this.getBounds();
+    const cx = bounds.x + bounds.width / 2;
+    const cy = bounds.y + bounds.height / 2;
 
     ctx.save();
-    // center of bounding box
-    const cx = this.x + width / 2;
-    const cy = this.y + height / 2;
     ctx.translate(cx, cy);
     ctx.rotate(this.rotation);
+
+    // Apply scaling properly
     ctx.scale(this.scaleX, this.scaleY);
 
-    // draw image with top-left corner at (-width/2, -height/2)
-    // so that rotation occurs around the center
-    ctx.drawImage(this.img, -width / 2, -height / 2);
+    ctx.drawImage(
+      this.img,
+      -this.img.width / 2,
+      -this.img.height / 2,
+      this.img.width,
+      this.img.height
+    );
 
     ctx.restore();
   }
