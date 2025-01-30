@@ -51,13 +51,16 @@ export class CanvasEditor {
     this.render();
   }
 
-  addImage(src: string, x: number, y: number) {
+  async addImage(src: string, x: number, y: number) {
     const img = new Image();
     img.src = src;
-    img.onload = () => {
-      this.nodes.push(new ImageNode(img, x, y));
-      this.render();
-    };
+    await new Promise<void>((resolve) => {
+      img.onload = () => {
+        this.nodes.push(new ImageNode(img, x, y));
+        this.render();
+        resolve();
+      };
+    });
   }
 
   private onMouseDown(event: MouseEvent) {
