@@ -380,23 +380,32 @@ class TextNode extends Node {
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
 
-    // Set font and measure text
-    ctx.font = `${this.fontSize}px ${this.fontFamily}`;
+    // Calculate scaled font size
+    const scaledFontSize = this.fontSize * this.scaleY; // Use Y-scale for vertical accuracy
+    ctx.font = `${scaledFontSize}px ${this.fontFamily}`;
+
+    // Recalculate text width based on new font size
     this.textWidth = ctx.measureText(this.text).width;
 
-    // Compute center and transformations
-    const { x, y, width, height } = this.getBounds();
-    const cx = x + width / 2;
-    const cy = y + height / 2;
+    // Compute scaled bounding box dimensions
+    const width = this.textWidth;
+    const height = scaledFontSize; // Height is now dependent on new font size
 
+    // Compute center for correct rotation
+    const cx = this.x + width / 2;
+    const cy = this.y + height / 2;
+
+    // Apply transformations centered at (cx, cy)
     ctx.translate(cx, cy);
     ctx.rotate(this.rotation);
-    ctx.scale(this.scaleX, this.scaleY);
 
-    // Draw text centered
+    // Move back to top-left relative to center after transformation
+    ctx.translate(-width / 2, -height / 2);
+
+    // Draw text at (0,0), now correctly positioned, scaled, and rotated
     ctx.fillStyle = "black";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
     ctx.fillText(this.text, 0, 0);
 
     ctx.restore();
@@ -420,15 +429,12 @@ class TextNode extends Node {
   }
 
   getBounds() {
-    // Adjust for scaled text dimensions
-    const scaledWidth = this.textWidth * this.scaleX;
-    const scaledHeight = this.fontSize * this.scaleY;
-
+    const scaledFontSize = this.fontSize * this.scaleY;
     return {
-      x: this.x - scaledWidth / 2,
-      y: this.y - scaledHeight / 2,
-      width: scaledWidth,
-      height: scaledHeight,
+      x: this.x,
+      y: this.y,
+      width: this.textWidth, // Already measured based on scaled font
+      height: scaledFontSize,
       rotation: this.rotation,
     };
   }

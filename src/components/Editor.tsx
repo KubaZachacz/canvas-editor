@@ -8,8 +8,8 @@ const CanvasComponent: React.FC = () => {
   useEffect(() => {
     if (canvasRef.current) {
       editor = new CanvasEditor(canvasRef.current);
-      editor.addText("Hello, Canvas!", 50, 50);
-      editor.addImage("https://picsum.photos/id/237/536/354", 100, 100);
+      editor.addText("Hello, Canvas!", 0, 0);
+      editor.addImage("https://picsum.photos/id/237/536/354", 0, 0);
     }
   }, []);
 
