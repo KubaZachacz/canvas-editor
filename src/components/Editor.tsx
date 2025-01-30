@@ -9,8 +9,8 @@ const CanvasComponent: React.FC = () => {
     if (canvasRef.current) {
       editorRef.current = new CanvasEditor(canvasRef.current);
       const editor = editorRef.current;
-      editor.addText("Hello, Canvas!", 0, 0);
-      editor.addImage("https://picsum.photos/id/237/536/354", 0, 0);
+      editor.addText("Hello, Canvas!", 20, 20);
+      // editor.addImage("https://picsum.photos/id/237/536/354", 0, 0);
     }
   }, []);
 

@@ -42,6 +42,8 @@ export class CanvasEditor {
     this.canvas.addEventListener("mousedown", this.onMouseDown.bind(this));
     this.canvas.addEventListener("mousemove", this.onMouseMove.bind(this));
     this.canvas.addEventListener("mouseup", this.onMouseUp.bind(this));
+    this.canvas.addEventListener("dblclick", this.onDoubleClick.bind(this));
+    window.addEventListener("keydown", this.onKeyDown.bind(this));
   }
 
   addText(text: string, x: number, y: number) {
@@ -100,6 +102,9 @@ export class CanvasEditor {
       .find((node) => node.contains(offsetX, offsetY));
 
     if (clickedNode !== this.activeNode) {
+      if (this.activeNode instanceof TextNode) {
+        this.activeNode.stopEditing(); // Stop editing when clicking outside
+      }
       this.activeNode = clickedNode || null;
     }
 
@@ -146,6 +151,19 @@ export class CanvasEditor {
     this.activeHandle = null;
   }
 
+  private onDoubleClick(event: MouseEvent) {
+    if (this.activeNode instanceof TextNode) {
+      this.activeNode.startEditing();
+    }
+  }
+
+  private onKeyDown(event: KeyboardEvent) {
+    if (this.activeNode instanceof TextNode) {
+      this.activeNode.handleKeyPress(event.key);
+      this.render();
+    }
+  }
+
   private render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.nodes.forEach((node) => node.draw(this.ctx));
@@ -153,13 +171,17 @@ export class CanvasEditor {
     if (this.activeNode) {
       this.drawTransformer(this.activeNode);
     }
+
+    requestAnimationFrame(() => this.render());
   }
 
   /**
    * Draws the bounding box + corner handles for the active node.
    */
   private drawTransformer(node: Node) {
-    const { x, y, width, height, rotation } = node.getBounds();
+    const { x, y, width, height, rotation } = node.getBounds(
+      node.transformerPadding
+    );
     const centerX = x + width / 2;
     const centerY = y + height / 2;
 
@@ -241,7 +263,9 @@ export class CanvasEditor {
     mx: number,
     my: number
   ): HandleType | null {
-    const { x, y, width, height, rotation } = node.getBounds();
+    const { x, y, width, height, rotation } = node.getBounds(
+      node.transformerPadding
+    );
     const centerX = x + width / 2;
     const centerY = y + height / 2;
 
@@ -284,6 +308,7 @@ abstract class Node {
   protected rotation = 0;
   protected scaleX = 1;
   protected scaleY = 1;
+  public transformerPadding = 0;
 
   // For rotate/scale calculations
   private rotateStartAngle = 0;
@@ -340,7 +365,7 @@ abstract class Node {
 
   abstract draw(ctx: CanvasRenderingContext2D): void;
   abstract contains(x: number, y: number): boolean;
-  abstract getBounds(): {
+  abstract getBounds(padding?: number): {
     x: number;
     y: number;
     width: number;
@@ -372,41 +397,46 @@ class TextNode extends Node {
   private fontSize = 20;
   private fontFamily = "Arial";
   private textWidth = 0;
+  private isEditing = true;
+  private cursorVisible = false;
+  private cursorPos = 0; // Cursor position for inline editing
+  transformerPadding = 16;
 
   constructor(private text: string, x: number, y: number) {
     super(x, y);
+    setInterval(() => {
+      if (this.isEditing) this.cursorVisible = !this.cursorVisible;
+    }, 500); // Blinking cursor effect
   }
 
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
 
-    // Calculate scaled font size
-    const scaledFontSize = this.fontSize * this.scaleY; // Use Y-scale for vertical accuracy
+    const scaledFontSize = this.fontSize * this.scaleY;
     ctx.font = `${scaledFontSize}px ${this.fontFamily}`;
-
-    // Recalculate text width based on new font size
     this.textWidth = ctx.measureText(this.text).width;
 
-    // Compute scaled bounding box dimensions
     const width = this.textWidth;
-    const height = scaledFontSize; // Height is now dependent on new font size
+    const height = scaledFontSize;
 
-    // Compute center for correct rotation
     const cx = this.x + width / 2;
     const cy = this.y + height / 2;
 
-    // Apply transformations centered at (cx, cy)
     ctx.translate(cx, cy);
     ctx.rotate(this.rotation);
-
-    // Move back to top-left relative to center after transformation
     ctx.translate(-width / 2, -height / 2);
 
-    // Draw text at (0,0), now correctly positioned, scaled, and rotated
+    // Draw text
     ctx.fillStyle = "black";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
     ctx.fillText(this.text, 0, 0);
+
+    // If in edit mode, show cursor
+    if (this.isEditing && this.cursorVisible) {
+      const cursorX = ctx.measureText(this.text.slice(0, this.cursorPos)).width;
+      ctx.fillRect(cursorX, 0, 2, height * 0.8); // Cursor
+    }
 
     ctx.restore();
   }
@@ -416,27 +446,55 @@ class TextNode extends Node {
     const centerX = x + width / 2;
     const centerY = y + height / 2;
 
-    // Convert mouse position to local (unrotated) space
     const cos = Math.cos(-rotation);
     const sin = Math.sin(-rotation);
     const localX = cos * (mx - centerX) - sin * (my - centerY) + centerX;
     const localY = sin * (mx - centerX) + cos * (my - centerY) + centerY;
 
-    // Check if the transformed point is within bounds
     return (
       localX >= x && localX <= x + width && localY >= y && localY <= y + height
     );
   }
 
-  getBounds() {
+  getBounds(padding = 0) {
     const scaledFontSize = this.fontSize * this.scaleY;
     return {
-      x: this.x,
-      y: this.y,
-      width: this.textWidth, // Already measured based on scaled font
-      height: scaledFontSize,
+      x: this.x - padding,
+      y: this.y - padding,
+      width: this.textWidth + padding * 2,
+      height: scaledFontSize + padding * 2,
       rotation: this.rotation,
     };
+  }
+
+  startEditing() {
+    this.isEditing = true;
+    this.cursorPos = this.text.length;
+  }
+
+  stopEditing() {
+    this.isEditing = false;
+  }
+
+  handleKeyPress(key: string) {
+    if (!this.isEditing) return;
+
+    if (key === "Enter") {
+      this.stopEditing();
+    } else if (key === "Backspace") {
+      if (this.cursorPos > 0) {
+        this.text =
+          this.text.slice(0, this.cursorPos - 1) +
+          this.text.slice(this.cursorPos);
+        this.cursorPos--;
+      }
+    } else if (key.length === 1) {
+      this.text =
+        this.text.slice(0, this.cursorPos) +
+        key +
+        this.text.slice(this.cursorPos);
+      this.cursorPos++;
+    }
   }
 }
 
