@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { CanvasEditor } from "../CanvasEditor/CanvasEditor";
+import { ColorPickerPlugin } from "../CanvasEditor/plugins";
 
 const CanvasComponent: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -10,6 +11,7 @@ const CanvasComponent: React.FC = () => {
       if (!editorRef.current) return;
 
       const editor = editorRef.current;
+      editor.use(new ColorPickerPlugin());
 
       await editor.addImage("https://picsum.photos/id/237/536/354", 100, 100);
       editor.addText("Hello, Canvas!", 20, 20);

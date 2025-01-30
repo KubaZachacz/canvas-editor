@@ -1,10 +1,12 @@
 import { Node, TextNode, ImageNode } from "./nodes";
+import { ICanvasEditorPlugin } from "./plugins/CanvasEditorPlugin";
 
 export class CanvasEditor {
-  private canvas: HTMLCanvasElement;
+  canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private nodes: Node[] = [];
-  private activeNode: Node | null = null;
+  activeNode: Node | null = null;
+  private plugins: ICanvasEditorPlugin[] = [];
 
   // Tracking mouse interactions
   private dragging = false;
@@ -29,6 +31,26 @@ export class CanvasEditor {
     this.ctx = canvas.getContext("2d")!;
     this.initEvents();
     this.render();
+  }
+
+  /**
+   * Public method to register a plugin. This plugin can add its own
+   * canvas listeners in init() if desired.
+   */
+  public use(plugin: ICanvasEditorPlugin) {
+    this.plugins.push(plugin);
+    plugin.init?.(this);
+  }
+
+  /**
+   * Optional: if you want to remove a plugin at runtime.
+   */
+  public removePlugin(plugin: ICanvasEditorPlugin) {
+    const idx = this.plugins.indexOf(plugin);
+    if (idx !== -1) {
+      this.plugins.splice(idx, 1);
+      plugin.destroy?.();
+    }
   }
 
   /**
@@ -97,15 +119,6 @@ export class CanvasEditor {
           this.activeNode.startResize(offsetX, offsetY);
         }
         return;
-      }
-
-      if (this.activeNode instanceof TextNode) {
-        const color = this.activeNode.getColorPickerSelection(offsetX, offsetY);
-
-        if (color) {
-          this.render();
-          return;
-        }
       }
     }
 
@@ -176,17 +189,15 @@ export class CanvasEditor {
     }
   }
 
-  private render() {
+  render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.nodes.forEach((node) => node.draw(this.ctx));
 
+    // Call plugin's onRender
+    this.plugins.forEach((p) => p.onRender?.(this.ctx, this));
+
     if (this.activeNode) {
       this.drawTransformer(this.activeNode);
-
-      // Draw color picker if the active node is a TextNode
-      if (this.activeNode instanceof TextNode) {
-        this.drawColorPicker(this.activeNode);
-      }
 
       requestAnimationFrame(() => this.render());
     }
@@ -269,50 +280,6 @@ export class CanvasEditor {
         iconSize
       );
     }
-    this.ctx.restore();
-  }
-
-  private drawColorPicker(node: TextNode) {
-    const colors = ["black", "white", "red", "blue", "green"];
-    const { x, y, width, height, rotation } = node.getBounds(
-      node.transformerPadding
-    );
-
-    const centerX = x + width / 2;
-    const centerY = y + height / 2;
-
-    // Define picker position relative to the transformed node
-    const pickerX = x;
-    const pickerY = y + height + 24;
-    const circleRadius = 8;
-    const spacing = 6;
-
-    this.ctx.save();
-    this.ctx.translate(centerX, centerY);
-    this.ctx.rotate(rotation);
-    this.ctx.translate(-centerX, -centerY);
-
-    colors.forEach((color, index) => {
-      const circleX = pickerX + index * (circleRadius * 2 + spacing);
-      const circleY = pickerY;
-
-      // Draw selection ring if active
-      if (node.color === color) {
-        this.ctx.beginPath();
-        this.ctx.arc(circleX, circleY, circleRadius + 4, 0, Math.PI * 2);
-        this.ctx.strokeStyle = "white";
-        this.ctx.lineWidth = 3;
-        this.ctx.stroke();
-      }
-
-      // Draw color circle
-      this.ctx.beginPath();
-      this.ctx.arc(circleX, circleY, circleRadius, 0, Math.PI * 2);
-      this.ctx.fillStyle = color;
-      this.ctx.fill();
-      this.ctx.closePath();
-    });
-
     this.ctx.restore();
   }
 

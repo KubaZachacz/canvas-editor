@@ -157,38 +157,4 @@ export class TextNode extends Node {
       this.cursorPos.char++;
     }
   }
-
-  // In class TextNode, added method getColorPickerSelection()
-  getColorPickerSelection(mx: number, my: number): string | null {
-    const { x, y, width, height, rotation } = this.getBounds(
-      this.transformerPadding
-    );
-
-    const centerX = x + width / 2;
-    const centerY = y + height / 2;
-
-    // Convert mouse coordinates into rotated local space
-    const cos = Math.cos(-rotation);
-    const sin = Math.sin(-rotation);
-    const localX = cos * (mx - centerX) - sin * (my - centerY) + centerX;
-    const localY = sin * (mx - centerX) + cos * (my - centerY) + centerY;
-
-    const pickerX = x;
-    const pickerY = y + height + 24;
-    const circleRadius = 8;
-    const spacing = 6;
-
-    for (let index = 0; index < this.colors.length; index++) {
-      const circleX = pickerX + index * (circleRadius * 2 + spacing);
-      const circleY = pickerY;
-
-      const distance = Math.hypot(localX - circleX, localY - circleY);
-      if (distance <= circleRadius) {
-        this.color = this.colors[index];
-
-        return this.color;
-      }
-    }
-    return null;
-  }
 }
