@@ -143,7 +143,6 @@ export class CanvasEditor {
     }
 
     this.dragStart = { x: event.offsetX, y: event.offsetY };
-    this.render();
   }
 
   private onMouseUp() {
@@ -151,7 +150,7 @@ export class CanvasEditor {
     this.activeHandle = null;
   }
 
-  private onDoubleClick(event: MouseEvent) {
+  private onDoubleClick() {
     if (this.activeNode instanceof TextNode) {
       this.activeNode.startEditing();
     }
@@ -160,7 +159,6 @@ export class CanvasEditor {
   private onKeyDown(event: KeyboardEvent) {
     if (this.activeNode instanceof TextNode) {
       this.activeNode.handleKeyPress(event.key);
-      this.render();
     }
   }
 
@@ -170,9 +168,8 @@ export class CanvasEditor {
 
     if (this.activeNode) {
       this.drawTransformer(this.activeNode);
+      requestAnimationFrame(() => this.render());
     }
-
-    requestAnimationFrame(() => this.render());
   }
 
   /**
