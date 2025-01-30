@@ -158,7 +158,7 @@ export class CanvasEditor {
 
   private onKeyDown(event: KeyboardEvent) {
     if (this.activeNode instanceof TextNode) {
-      this.activeNode.handleKeyPress(event.key);
+      this.activeNode.handleKeyPress(event);
     }
   }
 
@@ -394,13 +394,16 @@ class TextNode extends Node {
   private fontSize = 20;
   private fontFamily = "Arial";
   private textWidth = 0;
-  private isEditing = true;
+  private isEditing = false;
   private cursorVisible = false;
-  private cursorPos = 0; // Cursor position for inline editing
+  private cursorPos = { line: 0, char: 0 }; // Track cursor in multi-line
+  private textLines: string[]; // Store text as an array of lines
   transformerPadding = 16;
 
-  constructor(private text: string, x: number, y: number) {
+  constructor(text: string, x: number, y: number) {
     super(x, y);
+    this.textLines = text.split("\n"); // Initialize with multi-line support
+
     setInterval(() => {
       if (this.isEditing) this.cursorVisible = !this.cursorVisible;
     }, 500); // Blinking cursor effect
@@ -411,28 +414,40 @@ class TextNode extends Node {
 
     const scaledFontSize = this.fontSize * this.scaleY;
     ctx.font = `${scaledFontSize}px ${this.fontFamily}`;
-    this.textWidth = ctx.measureText(this.text).width;
 
-    const width = this.textWidth;
-    const height = scaledFontSize;
+    // Determine max width for alignment
+    this.textWidth = Math.max(
+      ...this.textLines.map((line) => ctx.measureText(line).width)
+    );
 
-    const cx = this.x + width / 2;
+    const height = scaledFontSize * this.textLines.length;
+
+    // Compute center for correct rotation
+    const cx = this.x + this.textWidth / 2;
     const cy = this.y + height / 2;
 
+    // Apply transformations centered at (cx, cy)
     ctx.translate(cx, cy);
     ctx.rotate(this.rotation);
-    ctx.translate(-width / 2, -height / 2);
+    ctx.translate(-this.textWidth / 2, -height / 2);
 
-    // Draw text
+    // Draw text line by line
     ctx.fillStyle = "black";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    ctx.fillText(this.text, 0, 0);
+
+    this.textLines.forEach((line, i) => {
+      ctx.fillText(line, 0, i * scaledFontSize);
+    });
 
     // If in edit mode, show cursor
     if (this.isEditing && this.cursorVisible) {
-      const cursorX = ctx.measureText(this.text.slice(0, this.cursorPos)).width;
-      ctx.fillRect(cursorX, 0, 2, height * 0.8); // Cursor
+      const currentLine = this.textLines[this.cursorPos.line] || "";
+      const cursorX = ctx.measureText(
+        currentLine.slice(0, this.cursorPos.char)
+      ).width;
+      const cursorY = this.cursorPos.line * scaledFontSize;
+      ctx.fillRect(cursorX, cursorY, 2, scaledFontSize * 0.8); // Cursor
     }
 
     ctx.restore();
@@ -459,38 +474,65 @@ class TextNode extends Node {
       x: this.x - padding,
       y: this.y - padding,
       width: this.textWidth + padding * 2,
-      height: scaledFontSize + padding * 2,
+      height: scaledFontSize * this.textLines.length + padding * 2,
       rotation: this.rotation,
     };
   }
 
   startEditing() {
     this.isEditing = true;
-    this.cursorPos = this.text.length;
+    this.cursorPos = {
+      line: this.textLines.length - 1,
+      char: this.textLines[this.textLines.length - 1].length,
+    };
   }
 
   stopEditing() {
     this.isEditing = false;
   }
 
-  handleKeyPress(key: string) {
+  handleKeyPress(event: KeyboardEvent) {
     if (!this.isEditing) return;
 
-    if (key === "Enter") {
+    const { key, ctrlKey, shiftKey } = event;
+
+    if (key === "Enter" && (ctrlKey || shiftKey)) {
+      // Insert new line at cursor position
+      const currentLine = this.textLines[this.cursorPos.line];
+      const beforeCursor = currentLine.slice(0, this.cursorPos.char);
+      const afterCursor = currentLine.slice(this.cursorPos.char);
+
+      this.textLines.splice(this.cursorPos.line + 1, 0, afterCursor);
+      this.textLines[this.cursorPos.line] = beforeCursor;
+
+      // Move cursor to the new line
+      this.cursorPos.line++;
+      this.cursorPos.char = 0;
+    } else if (key === "Enter") {
       this.stopEditing();
     } else if (key === "Backspace") {
-      if (this.cursorPos > 0) {
-        this.text =
-          this.text.slice(0, this.cursorPos - 1) +
-          this.text.slice(this.cursorPos);
-        this.cursorPos--;
+      if (this.cursorPos.char > 0) {
+        // Remove character before cursor
+        const currentLine = this.textLines[this.cursorPos.line];
+        this.textLines[this.cursorPos.line] =
+          currentLine.slice(0, this.cursorPos.char - 1) +
+          currentLine.slice(this.cursorPos.char);
+        this.cursorPos.char--;
+      } else if (this.cursorPos.line > 0) {
+        // Merge with previous line
+        const removedLine = this.textLines.splice(this.cursorPos.line, 1)[0];
+        this.cursorPos.line--;
+        this.cursorPos.char = this.textLines[this.cursorPos.line].length;
+        this.textLines[this.cursorPos.line] += removedLine;
       }
     } else if (key.length === 1) {
-      this.text =
-        this.text.slice(0, this.cursorPos) +
+      // Insert character at cursor position
+      const currentLine = this.textLines[this.cursorPos.line];
+      this.textLines[this.cursorPos.line] =
+        currentLine.slice(0, this.cursorPos.char) +
         key +
-        this.text.slice(this.cursorPos);
-      this.cursorPos++;
+        currentLine.slice(this.cursorPos.char);
+      this.cursorPos.char++;
     }
   }
 }
