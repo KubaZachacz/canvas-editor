@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { CanvasEditor } from "../utils/CanvasEditor";
+import { CanvasEditor } from "../CanvasEditor/CanvasEditor";
 
 const CanvasComponent: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
