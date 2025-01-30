@@ -93,6 +93,15 @@ export class CanvasEditor {
         }
         return;
       }
+
+      if (this.activeNode instanceof TextNode) {
+        const color = this.activeNode.getColorPickerSelection(offsetX, offsetY);
+
+        if (color) {
+          this.render();
+          return;
+        }
+      }
     }
 
     // If not clicked on a handle, see if we clicked on any node
@@ -168,6 +177,12 @@ export class CanvasEditor {
 
     if (this.activeNode) {
       this.drawTransformer(this.activeNode);
+
+      // Draw color picker if the active node is a TextNode
+      if (this.activeNode instanceof TextNode) {
+        this.drawColorPicker(this.activeNode);
+      }
+
       requestAnimationFrame(() => this.render());
     }
   }
@@ -249,6 +264,50 @@ export class CanvasEditor {
         iconSize
       );
     }
+    this.ctx.restore();
+  }
+
+  private drawColorPicker(node: TextNode) {
+    const colors = ["black", "white", "red", "blue", "green"];
+    const { x, y, width, height, rotation } = node.getBounds(
+      node.transformerPadding
+    );
+
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+
+    // Define picker position relative to the transformed node
+    const pickerX = x;
+    const pickerY = y + height + 24;
+    const circleRadius = 8;
+    const spacing = 6;
+
+    this.ctx.save();
+    this.ctx.translate(centerX, centerY);
+    this.ctx.rotate(rotation);
+    this.ctx.translate(-centerX, -centerY);
+
+    colors.forEach((color, index) => {
+      const circleX = pickerX + index * (circleRadius * 2 + spacing);
+      const circleY = pickerY;
+
+      // Draw selection ring if active
+      if (node.color === color) {
+        this.ctx.beginPath();
+        this.ctx.arc(circleX, circleY, circleRadius + 4, 0, Math.PI * 2);
+        this.ctx.strokeStyle = "white";
+        this.ctx.lineWidth = 3;
+        this.ctx.stroke();
+      }
+
+      // Draw color circle
+      this.ctx.beginPath();
+      this.ctx.arc(circleX, circleY, circleRadius, 0, Math.PI * 2);
+      this.ctx.fillStyle = color;
+      this.ctx.fill();
+      this.ctx.closePath();
+    });
+
     this.ctx.restore();
   }
 
@@ -398,6 +457,8 @@ class TextNode extends Node {
   private cursorVisible = false;
   private cursorPos = { line: 0, char: 0 }; // Track cursor in multi-line
   private textLines: string[]; // Store text as an array of lines
+  private colors = ["black", "white", "red", "blue", "green"];
+  color = this.colors[0];
   transformerPadding = 16;
 
   constructor(text: string, x: number, y: number) {
@@ -432,7 +493,7 @@ class TextNode extends Node {
     ctx.translate(-this.textWidth / 2, -height / 2);
 
     // Draw text line by line, centering shorter lines
-    ctx.fillStyle = "black";
+    ctx.fillStyle = this.color;
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
 
@@ -541,6 +602,40 @@ class TextNode extends Node {
         currentLine.slice(this.cursorPos.char);
       this.cursorPos.char++;
     }
+  }
+
+  // In class TextNode, added method getColorPickerSelection()
+  getColorPickerSelection(mx: number, my: number): string | null {
+    const { x, y, width, height, rotation } = this.getBounds(
+      this.transformerPadding
+    );
+
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+
+    // Convert mouse coordinates into rotated local space
+    const cos = Math.cos(-rotation);
+    const sin = Math.sin(-rotation);
+    const localX = cos * (mx - centerX) - sin * (my - centerY) + centerX;
+    const localY = sin * (mx - centerX) + cos * (my - centerY) + centerY;
+
+    const pickerX = x;
+    const pickerY = y + height + 24;
+    const circleRadius = 8;
+    const spacing = 6;
+
+    for (let index = 0; index < this.colors.length; index++) {
+      const circleX = pickerX + index * (circleRadius * 2 + spacing);
+      const circleY = pickerY;
+
+      const distance = Math.hypot(localX - circleX, localY - circleY);
+      if (distance <= circleRadius) {
+        this.color = this.colors[index];
+
+        return this.color;
+      }
+    }
+    return null;
   }
 }
 
