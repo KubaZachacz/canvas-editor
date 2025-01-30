@@ -431,13 +431,15 @@ class TextNode extends Node {
     ctx.rotate(this.rotation);
     ctx.translate(-this.textWidth / 2, -height / 2);
 
-    // Draw text line by line
+    // Draw text line by line, centering shorter lines
     ctx.fillStyle = "black";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
 
     this.textLines.forEach((line, i) => {
-      ctx.fillText(line, 0, i * scaledFontSize);
+      const lineWidth = ctx.measureText(line).width;
+      const offsetX = (this.textWidth - lineWidth) / 2; // Center the line
+      ctx.fillText(line, offsetX, i * scaledFontSize);
     });
 
     // If in edit mode, show cursor
@@ -447,7 +449,12 @@ class TextNode extends Node {
         currentLine.slice(0, this.cursorPos.char)
       ).width;
       const cursorY = this.cursorPos.line * scaledFontSize;
-      ctx.fillRect(cursorX, cursorY, 2, scaledFontSize * 0.8); // Cursor
+      ctx.fillRect(
+        (this.textWidth - ctx.measureText(currentLine).width) / 2 + cursorX,
+        cursorY,
+        2,
+        scaledFontSize * 0.8
+      );
     }
 
     ctx.restore();
