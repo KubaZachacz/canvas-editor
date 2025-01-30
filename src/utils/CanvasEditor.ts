@@ -473,10 +473,23 @@ class ImageNode extends Node {
     ctx.restore();
   }
 
-  contains(mx: number, my: number) {
-    // Approx bounding box check ignoring rotation
-    const { x, y, width, height } = this.getBounds();
-    return mx >= x && mx <= x + width && my >= y && my <= y + height;
+  contains(mx: number, my: number): boolean {
+    const { x, y, width, height, rotation } = this.getBounds();
+
+    // Compute the center of the image
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+
+    // Convert mouse coordinates to the image’s local space by rotating in reverse
+    const cos = Math.cos(-rotation);
+    const sin = Math.sin(-rotation);
+    const localX = cos * (mx - centerX) - sin * (my - centerY) + centerX;
+    const localY = sin * (mx - centerX) + cos * (my - centerY) + centerY;
+
+    // Now check if the transformed local point is inside the original (unrotated) rectangle
+    return (
+      localX >= x && localX <= x + width && localY >= y && localY <= y + height
+    );
   }
 
   getBounds() {

@@ -3,11 +3,12 @@ import { CanvasEditor } from "../utils/CanvasEditor";
 
 const CanvasComponent: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  let editor: CanvasEditor | null = null;
+  const editorRef = useRef<CanvasEditor | null>(null);
 
   useEffect(() => {
     if (canvasRef.current) {
-      editor = new CanvasEditor(canvasRef.current);
+      editorRef.current = new CanvasEditor(canvasRef.current);
+      const editor = editorRef.current;
       editor.addText("Hello, Canvas!", 0, 0);
       editor.addImage("https://picsum.photos/id/237/536/354", 0, 0);
     }
