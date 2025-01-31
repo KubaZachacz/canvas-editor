@@ -1,6 +1,16 @@
 import { CanvasEditor } from "../CanvasEditor";
 import { ICanvasEditorPlugin } from "./CanvasEditorPlugin";
 import { TextNode } from "../nodes/TextNode";
+import { Node } from "../nodes/Node";
+
+abstract class EditableTextNode extends TextNode {
+  originalColor?: string;
+  originalFontFamily?: string;
+  originalFontWeight?: string;
+}
+
+const isEditableTextNode = (node: Node | null): node is EditableTextNode =>
+  node instanceof TextNode;
 
 export class TextEditorPlugin implements ICanvasEditorPlugin {
   private editor!: CanvasEditor;
@@ -8,6 +18,8 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
   private cursorVisible = false;
   private cursorPos = { line: 0, char: 0 }; // Cursor position
   private cursorBlinkInterval: NodeJS.Timeout | null = null;
+  private placeholderText = "Type your text\nhere";
+  private textNode: EditableTextNode | null = null;
 
   init(editor: CanvasEditor) {
     this.editor = editor;
@@ -52,8 +64,16 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
     }
   }
 
-  private startEditing(node: TextNode) {
+  private startEditing(node: EditableTextNode) {
     this.isEditing = true;
+
+    this.textNode = node;
+
+    if (!node.text.length) {
+      node.textLines = [""];
+      node.color = node.originalColor || "black";
+    }
+
     this.cursorPos = {
       line: node.textLines.length - 1,
       char: node.textLines[node.textLines.length - 1].length,
@@ -68,6 +88,11 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
 
   private stopEditing() {
     this.isEditing = false;
+
+    if (this.textNode && !this.textNode?.text.length) {
+      this.setPlaceholderText(this.textNode);
+    }
+
     if (this.cursorBlinkInterval) {
       clearInterval(this.cursorBlinkInterval);
       this.cursorBlinkInterval = null;
@@ -88,7 +113,7 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
 
       textNode.textLines.splice(this.cursorPos.line + 1, 0, afterCursor);
       textNode.textLines[this.cursorPos.line] = beforeCursor;
-
+      textNode.text += "\n";
       // Move cursor to the new line
       this.cursorPos.line++;
       this.cursorPos.char = 0;
@@ -101,6 +126,7 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
         textNode.textLines[this.cursorPos.line] =
           currentLine.slice(0, this.cursorPos.char - 1) +
           currentLine.slice(this.cursorPos.char);
+        textNode.text = textNode.text.slice(0, -1);
         this.cursorPos.char--;
       } else if (this.cursorPos.line > 0) {
         // Merge with previous line
@@ -111,6 +137,7 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
         this.cursorPos.line--;
         this.cursorPos.char = textNode.textLines[this.cursorPos.line].length;
         textNode.textLines[this.cursorPos.line] += removedLine;
+        textNode.text = textNode.text.slice(0, -1);
       }
     } else if (key.length === 1) {
       // Insert character at cursor position
@@ -119,6 +146,7 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
         currentLine.slice(0, this.cursorPos.char) +
         key +
         currentLine.slice(this.cursorPos.char);
+      textNode.text += key;
       this.cursorPos.char++;
     }
   }
@@ -163,5 +191,23 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
     );
 
     ctx.restore();
+  }
+
+  setPlaceholderText(node: TextNode) {
+    node.textLines = this.placeholderText.split("\n");
+    node.color = "#353535";
+    this.editor.render();
+  }
+
+  onAddNode(node: Node): void {
+    if (isEditableTextNode(node)) {
+      node.originalColor = node.color;
+      node.originalFontFamily = node.fontFamily;
+      node.originalFontWeight = node.fontWeight;
+
+      if (!node.text.length) {
+        this.setPlaceholderText(node);
+      }
+    }
   }
 }

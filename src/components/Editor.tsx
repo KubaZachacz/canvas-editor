@@ -15,7 +15,7 @@ const CanvasComponent: React.FC = () => {
       editor.use(new TextEditorPlugin());
 
       // await editor.addImage("https://picsum.photos/id/237/536/354", 100, 100);
-      editor.addText("Hello, Canvas!", 20, 20);
+      editor.addText("", 20, 20);
     };
 
     if (canvasRef.current) {

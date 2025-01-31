@@ -70,9 +70,14 @@ export class CanvasEditor {
     window.addEventListener("keydown", this.onKeyDown.bind(this));
   }
 
-  addText(text: string, x: number, y: number) {
-    this.nodes.push(new TextNode(text, x, y));
+  addNode(node: Node) {
+    this.nodes.push(node);
+    this.plugins.forEach((p) => p.onAddNode?.(node, this));
     this.render();
+  }
+
+  addText(text: string, x: number, y: number) {
+    this.addNode(new TextNode(text, x, y));
   }
 
   async addImage(src: string, x: number, y: number) {
@@ -80,8 +85,7 @@ export class CanvasEditor {
     img.src = src;
     await new Promise<void>((resolve) => {
       img.onload = () => {
-        this.nodes.push(new ImageNode(img, x, y));
-        this.render();
+        this.addNode(new ImageNode(img, x, y));
         resolve();
       };
     });

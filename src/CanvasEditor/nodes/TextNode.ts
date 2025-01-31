@@ -7,20 +7,32 @@ export class TextNode extends Node {
   fontSize = 20;
   fontFamily = "Arial";
   textWidth = 0;
+  text: string;
   textLines: string[]; // Store text as an array of lines
   color = "black";
   transformerPadding = 16;
+  fontWeight = "bold";
 
   constructor(text: string, x: number, y: number) {
     super(x, y);
-    this.textLines = text.split("\n"); // Initialize with multi-line support
+    this.text = text;
+    this.textLines = text.split("\n");
+  }
+
+  setText(text: string) {
+    this.text = text;
+    this.textLines = text.split("\n");
+  }
+
+  getText() {
+    return this.text;
   }
 
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
 
     const scaledFontSize = this.fontSize * this.scaleY;
-    ctx.font = `${scaledFontSize}px ${this.fontFamily}`;
+    ctx.font = `${this.fontWeight} ${scaledFontSize}px ${this.fontFamily}`;
 
     // Determine max width for alignment
     this.textWidth = Math.max(
