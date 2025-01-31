@@ -3,9 +3,9 @@
  */
 export abstract class Node {
   // Add optional rotation / scale for demonstration
-  protected rotation = 0;
-  protected scaleX = 1;
-  protected scaleY = 1;
+  rotation = 0;
+  scaleX = 1;
+  scaleY = 1;
   public transformerPadding = 0;
 
   // For rotate/scale calculations

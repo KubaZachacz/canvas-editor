@@ -4,24 +4,16 @@ import { Node } from "./Node";
  * TextNode: a simple text string that we can move/scale/rotate.
  */
 export class TextNode extends Node {
-  private fontSize = 20;
-  private fontFamily = "Arial";
-  private textWidth = 0;
-  private isEditing = false;
-  private cursorVisible = false;
-  private cursorPos = { line: 0, char: 0 }; // Track cursor in multi-line
-  private textLines: string[]; // Store text as an array of lines
-  private colors = ["black", "white", "red", "blue", "green"];
-  color = this.colors[0];
+  fontSize = 20;
+  fontFamily = "Arial";
+  textWidth = 0;
+  textLines: string[]; // Store text as an array of lines
+  color = "black";
   transformerPadding = 16;
 
   constructor(text: string, x: number, y: number) {
     super(x, y);
     this.textLines = text.split("\n"); // Initialize with multi-line support
-
-    setInterval(() => {
-      if (this.isEditing) this.cursorVisible = !this.cursorVisible;
-    }, 500); // Blinking cursor effect
   }
 
   draw(ctx: CanvasRenderingContext2D) {
@@ -57,21 +49,6 @@ export class TextNode extends Node {
       ctx.fillText(line, offsetX, i * scaledFontSize);
     });
 
-    // If in edit mode, show cursor
-    if (this.isEditing && this.cursorVisible) {
-      const currentLine = this.textLines[this.cursorPos.line] || "";
-      const cursorX = ctx.measureText(
-        currentLine.slice(0, this.cursorPos.char)
-      ).width;
-      const cursorY = this.cursorPos.line * scaledFontSize;
-      ctx.fillRect(
-        (this.textWidth - ctx.measureText(currentLine).width) / 2 + cursorX,
-        cursorY,
-        2,
-        scaledFontSize * 0.8
-      );
-    }
-
     ctx.restore();
   }
 
@@ -99,62 +76,5 @@ export class TextNode extends Node {
       height: scaledFontSize * this.textLines.length + padding * 2,
       rotation: this.rotation,
     };
-  }
-
-  startEditing() {
-    this.isEditing = true;
-    this.cursorPos = {
-      line: this.textLines.length - 1,
-      char: this.textLines[this.textLines.length - 1].length,
-    };
-  }
-
-  stopEditing() {
-    this.isEditing = false;
-  }
-
-  handleKeyPress(event: KeyboardEvent) {
-    if (!this.isEditing) return;
-
-    const { key, ctrlKey, shiftKey } = event;
-
-    if (key === "Enter" && (ctrlKey || shiftKey)) {
-      // Insert new line at cursor position
-      const currentLine = this.textLines[this.cursorPos.line];
-      const beforeCursor = currentLine.slice(0, this.cursorPos.char);
-      const afterCursor = currentLine.slice(this.cursorPos.char);
-
-      this.textLines.splice(this.cursorPos.line + 1, 0, afterCursor);
-      this.textLines[this.cursorPos.line] = beforeCursor;
-
-      // Move cursor to the new line
-      this.cursorPos.line++;
-      this.cursorPos.char = 0;
-    } else if (key === "Enter") {
-      this.stopEditing();
-    } else if (key === "Backspace") {
-      if (this.cursorPos.char > 0) {
-        // Remove character before cursor
-        const currentLine = this.textLines[this.cursorPos.line];
-        this.textLines[this.cursorPos.line] =
-          currentLine.slice(0, this.cursorPos.char - 1) +
-          currentLine.slice(this.cursorPos.char);
-        this.cursorPos.char--;
-      } else if (this.cursorPos.line > 0) {
-        // Merge with previous line
-        const removedLine = this.textLines.splice(this.cursorPos.line, 1)[0];
-        this.cursorPos.line--;
-        this.cursorPos.char = this.textLines[this.cursorPos.line].length;
-        this.textLines[this.cursorPos.line] += removedLine;
-      }
-    } else if (key.length === 1) {
-      // Insert character at cursor position
-      const currentLine = this.textLines[this.cursorPos.line];
-      this.textLines[this.cursorPos.line] =
-        currentLine.slice(0, this.cursorPos.char) +
-        key +
-        currentLine.slice(this.cursorPos.char);
-      this.cursorPos.char++;
-    }
   }
 }

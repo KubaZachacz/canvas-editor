@@ -4,7 +4,7 @@ import { ICanvasEditorPlugin } from "./plugins/CanvasEditorPlugin";
 export class CanvasEditor {
   canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private nodes: Node[] = [];
+  nodes: Node[] = [];
   activeNode: Node | null = null;
   private plugins: ICanvasEditorPlugin[] = [];
 
@@ -129,9 +129,6 @@ export class CanvasEditor {
       .find((node) => node.contains(offsetX, offsetY));
 
     if (clickedNode !== this.activeNode) {
-      if (this.activeNode instanceof TextNode) {
-        this.activeNode.stopEditing(); // Stop editing when clicking outside
-      }
       this.activeNode = clickedNode || null;
     }
 
@@ -177,17 +174,9 @@ export class CanvasEditor {
     this.activeHandle = null;
   }
 
-  private onDoubleClick() {
-    if (this.activeNode instanceof TextNode) {
-      this.activeNode.startEditing();
-    }
-  }
+  private onDoubleClick() {}
 
-  private onKeyDown(event: KeyboardEvent) {
-    if (this.activeNode instanceof TextNode) {
-      this.activeNode.handleKeyPress(event);
-    }
-  }
+  private onKeyDown() {}
 
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
