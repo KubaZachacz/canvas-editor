@@ -1,12 +1,7 @@
-import "./App.css";
-import CanvasComponent from "./components/Editor";
+import EditorPage from "@/components/EditorPage";
 
 function App() {
-  return (
-    <>
-      <CanvasComponent />
-    </>
-  );
+  return <EditorPage />;
 }
 
 export default App;
