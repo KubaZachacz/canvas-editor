@@ -26,6 +26,8 @@ export class CanvasEditor {
   // Handle radius for the corner circles
   private handleRadius = 12;
 
+  private backgroundImage: HTMLImageElement | null = null;
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d")!;
@@ -184,6 +186,9 @@ export class CanvasEditor {
 
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    // Draw background image first
+    this.drawBackgroundImage();
+
     this.nodes.forEach((node) => node.draw(this.ctx));
 
     // Call plugin's onRender
@@ -313,6 +318,76 @@ export class CanvasEditor {
     }
 
     return null;
+  }
+
+  /**
+   * Load and set a background image
+   */
+  setBackgroundImage(imageSrc: string) {
+    const img = new Image();
+    img.src = imageSrc;
+    img.onload = () => {
+      this.backgroundImage = img;
+      this.render(); // Re-render canvas after setting background
+    };
+  }
+
+  /**
+   * Draws the background image with 'object-fit: cover' effect
+   */
+  private drawBackgroundImage() {
+    if (!this.backgroundImage) return;
+
+    const img = this.backgroundImage;
+    const canvasWidth = this.canvas.width;
+    const canvasHeight = this.canvas.height;
+    const imgRatio = img.width / img.height;
+    const canvasRatio = canvasWidth / canvasHeight;
+
+    let drawWidth, drawHeight, offsetX, offsetY;
+
+    if (imgRatio > canvasRatio) {
+      // Image is wider than canvas
+      drawWidth = canvasHeight * imgRatio;
+      drawHeight = canvasHeight;
+      offsetX = (canvasWidth - drawWidth) / 2;
+      offsetY = 0;
+    } else {
+      // Image is taller than canvas
+      drawWidth = canvasWidth;
+      drawHeight = canvasWidth / imgRatio;
+      offsetX = 0;
+      offsetY = (canvasHeight - drawHeight) / 2;
+    }
+
+    this.ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+  }
+
+  reset() {
+    this.nodes = [];
+    this.activeNode = null;
+    this.backgroundImage = null;
+    this.render();
+  }
+
+  exportImage(format: "png" | "jpeg" = "png", quality?: number): string {
+    this.activeNode = null; // Don't show transformer in the exported image
+    this.render();
+    return this.canvas.toDataURL(`image/${format}`, quality);
+  }
+
+  downloadImage(
+    filename: string = "canvas.png",
+    format: "png" | "jpeg" = "png",
+    quality?: number
+  ) {
+    const dataUrl = this.exportImage(format, quality);
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }
 
