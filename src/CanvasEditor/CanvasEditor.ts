@@ -239,20 +239,20 @@ export class CanvasEditor {
     // Draw the 4 handles:
     //   Top-left    => translate
     //   Top-right   => delete
-    //   Bottom-right => rotate
-    //   Bottom-left  => resize
+    //   Bottom-right => resize
+    //   Bottom-left  => rotate
     //
     // Define handle positions in local (unrotated) space
     const handles = [
-      { x, y, icon: this.handleIcons.translate },
+      { x, y, icon: this.handleIcons.translate, radius: 20 },
       { x: x + width, y, icon: this.handleIcons.delete },
-      { x: x + width, y: y + height, icon: this.handleIcons.rotate },
-      { x, y: y + height, icon: this.handleIcons.resize },
+      { x: x + width, y: y + height, icon: this.handleIcons.resize },
+      // { x, y: y + height, icon: this.handleIcons.rotate },
     ];
 
     // Rotate and draw handles
-    handles.forEach(({ x, y, icon }) => {
-      this.drawHandle(x, y, icon, rotation, centerX, centerY);
+    handles.forEach(({ x, y, icon, radius }) => {
+      this.drawHandle(x, y, icon, rotation, centerX, centerY, radius);
     });
   }
 
@@ -265,7 +265,8 @@ export class CanvasEditor {
     icon: HTMLImageElement,
     angle: number,
     centerX: number,
-    centerY: number
+    centerY: number,
+    radius?: number
   ) {
     this.ctx.save();
     // Rotate handle position
@@ -273,9 +274,10 @@ export class CanvasEditor {
     this.ctx.rotate(angle);
     this.ctx.translate(-centerX, -centerY);
 
+    const handleRadius = radius || this.handleRadius;
     // Draw circle
     this.ctx.beginPath();
-    this.ctx.arc(cx, cy, this.handleRadius, 0, 2 * Math.PI, false);
+    this.ctx.arc(cx, cy, handleRadius, 0, 2 * Math.PI, false);
     this.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
     this.ctx.fill();
     this.ctx.strokeStyle = "#999";
@@ -284,7 +286,7 @@ export class CanvasEditor {
 
     // Draw the icon centered
     if (icon.complete) {
-      const iconSize = this.handleRadius * 1.5;
+      const iconSize = handleRadius * 1.5;
       this.ctx.drawImage(
         icon,
         cx - iconSize / 2,
@@ -318,16 +320,17 @@ export class CanvasEditor {
 
     // Define handle positions in local space
     const handles = [
-      { x, y, type: "translate" },
+      { x, y, type: "translate", radius: 20 },
       { x: x + width, y, type: "delete" },
-      { x: x + width, y: y + height, type: "rotate" },
-      { x, y: y + height, type: "resize" },
+      { x: x + width, y: y + height, type: "resize" },
+      // { x, y: y + height, type: "rotate" },
     ];
 
     // Check if the transformed mouse position is within any handle
     for (const handle of handles) {
       const distance = Math.hypot(localX - handle.x, localY - handle.y);
-      if (distance <= this.handleRadius) {
+      const handleRadius = handle.radius || this.handleRadius;
+      if (distance <= handleRadius) {
         return handle.type as HandleType;
       }
     }

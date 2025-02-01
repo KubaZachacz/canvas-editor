@@ -6,8 +6,9 @@ export class ColorPickerPlugin implements ICanvasEditorPlugin {
   private editor!: CanvasEditor;
   private colors = ["black", "white", "red", "blue", "green"];
   private circleRadius = 8;
-  private spacing = 6;
-  private yOffset = 24;
+  private spacing = 12;
+  private yOffset = 16;
+  private xOffset = 8;
   private canvasListener?: (e: MouseEvent) => void;
 
   constructor(colors?: string[]) {
@@ -47,7 +48,7 @@ export class ColorPickerPlugin implements ICanvasEditorPlugin {
     const centerY = y + height / 2;
 
     // Position the color picker below the text bounding box
-    const pickerX = x;
+    const pickerX = x + this.xOffset;
     const pickerY = y + height + this.yOffset;
 
     ctx.save();
@@ -62,9 +63,9 @@ export class ColorPickerPlugin implements ICanvasEditorPlugin {
       // If the node's current color is the same, draw a highlight
       if (activeNode.color === color) {
         ctx.beginPath();
-        ctx.arc(circleX, circleY, this.circleRadius + 4, 0, Math.PI * 2);
+        ctx.arc(circleX, circleY, this.circleRadius + 3, 0, Math.PI * 2);
         ctx.strokeStyle = "white";
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2;
         ctx.stroke();
       }
 

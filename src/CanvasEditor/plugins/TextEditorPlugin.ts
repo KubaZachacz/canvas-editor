@@ -195,7 +195,7 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
 
   setPlaceholderText(node: TextNode) {
     node.textLines = this.placeholderText.split("\n");
-    node.color = "#353535";
+    node.color = "#818181";
     this.editor.render();
   }
 
