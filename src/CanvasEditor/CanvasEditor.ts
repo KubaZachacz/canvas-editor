@@ -1,6 +1,9 @@
 import { Node, TextNode, ImageNode } from "./nodes";
 import { ICanvasEditorPlugin } from "./plugins/CanvasEditorPlugin";
 
+interface CanvasEditorOptions {
+  placeholderImage: string;
+}
 export class CanvasEditor {
   canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -27,12 +30,19 @@ export class CanvasEditor {
   private handleRadius = 12;
 
   private backgroundImage: HTMLImageElement | null = null;
+  private placeholderImage: HTMLImageElement | null = null;
+  private showPlaceholder = false;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, options?: CanvasEditorOptions) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d")!;
     this.initEvents();
     this.render();
+
+    if (options?.placeholderImage) {
+      this.showPlaceholder = true;
+      this.setPlaceholderImage(options.placeholderImage);
+    }
   }
 
   /**
@@ -75,6 +85,9 @@ export class CanvasEditor {
   addNode(node: Node) {
     this.nodes.push(node);
     this.plugins.forEach((p) => p.onAddNode?.(node, this));
+
+    this.showPlaceholder = false;
+
     this.render();
   }
 
@@ -187,7 +200,9 @@ export class CanvasEditor {
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     // Draw background image first
-    this.drawBackgroundImage();
+    this.drawBackgroundImage(
+      this.showPlaceholder ? this.placeholderImage : this.backgroundImage
+    );
 
     this.nodes.forEach((node) => node.draw(this.ctx));
 
@@ -328,6 +343,20 @@ export class CanvasEditor {
     img.src = imageSrc;
     img.onload = () => {
       this.backgroundImage = img;
+      this.showPlaceholder = false;
+      this.render(); // Re-render canvas after setting background
+    };
+  }
+
+  /**
+   * Load and set a background image
+   */
+  setPlaceholderImage(imageSrc: string) {
+    const img = new Image();
+    img.src = imageSrc;
+    img.onload = () => {
+      this.placeholderImage = img;
+      this.showPlaceholder = true;
       this.render(); // Re-render canvas after setting background
     };
   }
@@ -335,10 +364,9 @@ export class CanvasEditor {
   /**
    * Draws the background image with 'object-fit: cover' effect
    */
-  private drawBackgroundImage() {
-    if (!this.backgroundImage) return;
+  private drawBackgroundImage(img: HTMLImageElement | null) {
+    if (!img) return;
 
-    const img = this.backgroundImage;
     const canvasWidth = this.canvas.width;
     const canvasHeight = this.canvas.height;
     const imgRatio = img.width / img.height;
@@ -367,6 +395,7 @@ export class CanvasEditor {
     this.nodes = [];
     this.activeNode = null;
     this.backgroundImage = null;
+    this.showPlaceholder = this.placeholderImage !== null;
     this.render();
   }
 
@@ -388,6 +417,10 @@ export class CanvasEditor {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  onResize() {
+    this.render();
   }
 }
 

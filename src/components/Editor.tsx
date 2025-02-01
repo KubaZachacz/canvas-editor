@@ -22,7 +22,9 @@ const Editor: React.FC = () => {
       if (wrapperRef.current) {
         const ratio = 5 / 4;
         const { width } = wrapperRef.current.getBoundingClientRect();
-        setCanvasSize({ width, height: width * ratio });
+        const height = width * ratio;
+
+        setCanvasSize({ width, height });
       }
     };
 
@@ -33,17 +35,18 @@ const Editor: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const addNodes = async () => {
-      if (!editorRef.current) return;
+    if (canvasRef.current && !editorRef.current) {
+      const editor = new CanvasEditor(canvasRef.current, {
+        placeholderImage: "/images/placeholder.jpg",
+      });
+      editorRef.current = editor;
 
-      const editor = editorRef.current;
       editor.use(new ColorPickerPlugin());
       editor.use(new TextEditorPlugin());
-    };
+    }
 
-    if (canvasSize && canvasRef.current) {
-      editorRef.current = new CanvasEditor(canvasRef.current);
-      addNodes();
+    if (canvasSize) {
+      editorRef.current?.onResize();
     }
   }, [canvasSize]);
 
@@ -89,7 +92,6 @@ const Editor: React.FC = () => {
               </h1>
               <button
                 className="text-red border-b border-red cursor-pointer"
-                // onClick={() => editorRef.current?.reset()}
                 onClick={() => setIsWarning(true)}
               >
                 Reset
