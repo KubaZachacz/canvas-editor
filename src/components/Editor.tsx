@@ -3,6 +3,7 @@ import { CanvasEditor } from "../CanvasEditor/CanvasEditor";
 import { ColorPickerPlugin, TextEditorPlugin } from "../CanvasEditor/plugins";
 import { Background, Img, Logo, Reset, Text } from "./icons";
 import ImgLoadButton from "./ImgLoadButton";
+import { Button, ActionButton } from "@/components/ui";
 
 const Editor: React.FC = () => {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -90,40 +91,36 @@ const Editor: React.FC = () => {
               <Reset className="inline text-display ml-2" />
             </button>
           </div>
-          <hr className="text-white-98" />
-          <div className="bg-white-97 rounded-primary font-bold px-4 py-6">
+          <hr className="text-white-98 border-t-2" />
+          <div className="bg-white-97 rounded-large font-bold px-4 py-6">
             Add content
           </div>
           <div className="grid grid-cols-2 gap-8">
-            <button
-              onClick={onAddText}
-              className="bg-white-97 rounded-primary font-bold px-4 py-6 flex items-center flex-col gap-6 cursor-pointer"
-            >
-              <Text className="text-black-75 text-9xl" />
-              <span className="font-medium">Text</span>
-            </button>
+            <ActionButton onClick={onAddText} icon={Text}>
+              Text
+            </ActionButton>
             {imgControls.map(({ icon: Icon, label, onLoad }) => (
               <ImgLoadButton
                 key={label}
-                onLoad={onLoad}
-                className="bg-white-97 rounded-primary font-bold px-4 py-6 flex items-center flex-col gap-6 cursor-pointer"
+                onLoaded={onLoad}
+                icon={Icon}
+                className="bg-white-97 rounded-large font-bold px-4 py-6 flex items-center flex-col gap-6 cursor-pointer"
               >
-                <Icon className="text-black-75 text-9xl" />
-                <span className="font-medium">{label}</span>
+                {label}
               </ImgLoadButton>
             ))}
           </div>
         </div>
         <div>
-          <hr className="text-white-98 my-8" />
-          <button
+          <hr className="text-white-98 my-8 border-t-2" />
+          <Button
             className="block ml-auto"
             onClick={() => {
               editorRef.current?.downloadImage();
             }}
           >
             Export to PNG
-          </button>
+          </Button>
         </div>
       </div>
     </div>

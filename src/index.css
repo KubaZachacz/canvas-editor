@@ -3,7 +3,8 @@
 
 @theme {
   --font-sans: "Poppins", sans-serif;
-  --color-primary: #7209b7;
+  --color-primary-150: #550788;
+  --color-primary-100: #7209b7;
   --color-primary-50: rgba(114, 9, 183, 0.5);
   --color-black-100: #353535;
   --color-black-75: #676767;
@@ -17,8 +18,10 @@
   --text-display-large: 64px;
   --text-display: 32px;
   --text-body: 18px;
+  --text-button: 15px;
 
-  --radius-primary: 10px;
+  --radius-medium: 5px;
+  --radius-large: 10px;
 }
 
 body {

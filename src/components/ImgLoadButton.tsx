@@ -1,16 +1,17 @@
 import React, { useRef } from "react";
+import { ActionButton } from "@/components/ui";
+import { ActionButtonProps } from "./ui/ActionButton";
 
-interface ImgLoadButtonProps {
-  onLoad: (base64: string) => void;
-  children: React.ReactNode;
-  className?: string;
-}
+type ImgLoadButtonProps = Omit<ActionButtonProps, "onClick"> & {
+  onLoaded: (base64: string) => void;
+};
 
-const ImgLoadButton: React.FC<ImgLoadButtonProps> = ({
-  onLoad,
+const ImgLoadButton = ({
+  onLoaded,
   children,
   className,
-}) => {
+  icon,
+}: ImgLoadButtonProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleClick = () => {
@@ -23,7 +24,7 @@ const ImgLoadButton: React.FC<ImgLoadButtonProps> = ({
       const reader = new FileReader();
       reader.onloadend = () => {
         if (reader.result && typeof reader.result === "string") {
-          onLoad(reader.result);
+          onLoaded(reader.result);
         }
       };
       reader.readAsDataURL(file);
@@ -32,9 +33,14 @@ const ImgLoadButton: React.FC<ImgLoadButtonProps> = ({
 
   return (
     <>
-      <button onClick={handleClick} className={className} type="button">
+      <ActionButton
+        icon={icon}
+        onClick={handleClick}
+        className={className}
+        type="button"
+      >
         {children}
-      </button>
+      </ActionButton>
       <input
         type="file"
         accept="image/*"
