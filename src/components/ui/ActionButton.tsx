@@ -1,4 +1,4 @@
-import clsx from "clsx";
+import { cn } from "@/utils/cn";
 import React from "react";
 
 export interface ActionButtonProps
@@ -15,9 +15,9 @@ const ActionButton = ({
   return (
     <button
       {...rest}
-      className={clsx(
-        className,
-        "bg-white-97 rounded-large transition-colors font-bold px-4 py-6 flex items-center flex-col gap-6 cursor-pointer focus:outline-2 outline-primary-50 hover:bg-black-25 disabled:opacity-75 disabled:cursor-auto"
+      className={cn(
+        "bg-white-97 rounded-large transition-colors font-bold px-4 py-6 flex items-center flex-col gap-6 cursor-pointer focus:outline-2 outline-primary-50 hover:bg-black-25 disabled:opacity-75 disabled:cursor-auto",
+        className
       )}
     >
       <Icon className="text-black-75 text-9xl" />

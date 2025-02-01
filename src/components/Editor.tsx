@@ -4,6 +4,7 @@ import { ColorPickerPlugin, TextEditorPlugin } from "../CanvasEditor/plugins";
 import { Background, Img, Logo, Reset, Text } from "./icons";
 import ImgLoadButton from "./ImgLoadButton";
 import { Button, ActionButton } from "@/components/ui";
+import WarningModal from "./WarningModal";
 
 const Editor: React.FC = () => {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -13,6 +14,8 @@ const Editor: React.FC = () => {
     width: number;
     height: number;
   } | null>(null);
+
+  const [isWarning, setIsWarning] = useState(false);
 
   useEffect(() => {
     const setSize = () => {
@@ -66,64 +69,72 @@ const Editor: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-6 my-16">
-      <div ref={wrapperRef} className="w-full">
-        {canvasSize && (
-          <canvas
-            ref={canvasRef}
-            width={canvasSize.width}
-            height={canvasSize.height}
-            className="bg-black-50 select-none"
-          />
-        )}
-      </div>
-      <div className="h-full flex flex-col">
-        <div className="space-y-8 flex-1">
-          <div className="flex justify-between items-center">
-            <h1 className="text-display font-bold text-black-75">
-              <Logo className="inline text-display-large" /> CanvasEditor
-            </h1>
-            <button
-              className="text-red border-b border-red cursor-pointer"
-              onClick={() => editorRef.current?.reset()}
-            >
-              Reset
-              <Reset className="inline text-display ml-2" />
-            </button>
-          </div>
-          <hr className="text-white-98 border-t-2" />
-          <div className="bg-white-97 rounded-large font-bold px-4 py-6">
-            Add content
-          </div>
-          <div className="grid grid-cols-2 gap-8">
-            <ActionButton onClick={onAddText} icon={Text}>
-              Text
-            </ActionButton>
-            {imgControls.map(({ icon: Icon, label, onLoad }) => (
-              <ImgLoadButton
-                key={label}
-                onLoaded={onLoad}
-                icon={Icon}
-                className="bg-white-97 rounded-large font-bold px-4 py-6 flex items-center flex-col gap-6 cursor-pointer"
+    <>
+      <div className="grid grid-cols-2 gap-6 my-16">
+        <div ref={wrapperRef} className="w-full">
+          {canvasSize && (
+            <canvas
+              ref={canvasRef}
+              width={canvasSize.width}
+              height={canvasSize.height}
+              className="bg-black-50 select-none"
+            />
+          )}
+        </div>
+        <div className="h-full flex flex-col">
+          <div className="space-y-8 flex-1">
+            <div className="flex justify-between items-center">
+              <h1 className="text-display font-bold text-black-75">
+                <Logo className="inline text-display-large" /> CanvasEditor
+              </h1>
+              <button
+                className="text-red border-b border-red cursor-pointer"
+                // onClick={() => editorRef.current?.reset()}
+                onClick={() => setIsWarning(true)}
               >
-                {label}
-              </ImgLoadButton>
-            ))}
+                Reset
+                <Reset className="inline text-display ml-2" />
+              </button>
+            </div>
+            <hr className="text-white-98 border-t-2" />
+            <div className="bg-white-97 rounded-large font-bold px-4 py-6">
+              Add content
+            </div>
+            <div className="grid grid-cols-2 gap-8">
+              <ActionButton onClick={onAddText} icon={Text}>
+                Text
+              </ActionButton>
+              {imgControls.map(({ icon: Icon, label, onLoad }) => (
+                <ImgLoadButton
+                  key={label}
+                  onLoaded={onLoad}
+                  icon={Icon}
+                  className="bg-white-97 rounded-large font-bold px-4 py-6 flex items-center flex-col gap-6 cursor-pointer"
+                >
+                  {label}
+                </ImgLoadButton>
+              ))}
+            </div>
+          </div>
+          <div>
+            <hr className="text-white-98 my-8 border-t-2" />
+            <Button
+              className="block ml-auto"
+              onClick={() => {
+                editorRef.current?.downloadImage();
+              }}
+            >
+              Export to PNG
+            </Button>
           </div>
         </div>
-        <div>
-          <hr className="text-white-98 my-8 border-t-2" />
-          <Button
-            className="block ml-auto"
-            onClick={() => {
-              editorRef.current?.downloadImage();
-            }}
-          >
-            Export to PNG
-          </Button>
-        </div>
       </div>
-    </div>
+      <WarningModal
+        isOpen={isWarning}
+        onClose={() => setIsWarning(false)}
+        onConfirm={() => editorRef.current?.reset()}
+      />
+    </>
   );
 };
 
