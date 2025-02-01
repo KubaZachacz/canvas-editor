@@ -87,7 +87,7 @@ export class CanvasEditor {
     this.plugins.forEach((p) => p.onAddNode?.(node, this));
 
     this.showPlaceholder = false;
-
+    this.activeNode = node;
     this.render();
   }
 

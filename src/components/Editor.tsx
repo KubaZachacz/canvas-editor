@@ -68,7 +68,7 @@ const Editor: React.FC = () => {
   ];
 
   const onAddText = () => {
-    editorRef.current?.addText("Hello, world!", 20, 20);
+    editorRef.current?.addText("", 20, 20);
   };
 
   return (
