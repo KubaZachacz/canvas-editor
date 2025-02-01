@@ -3,17 +3,23 @@
 
 @theme {
   --font-sans: "Poppins", sans-serif;
-  --color-primary: "#7209B7";
-  --color-primary-50: "rgba(114, 9, 183, 0.5)";
-  --black-100: "#353535";
-  --black-75: "#676767";
-  --black-50: "#9B9B9B";
-  --black-25: "#CDCDCD";
-  --white: "#FFFFFF";
-  --white-98: "#FAFAFA";
-  --white-97: "#F7F7F8";
+  --color-primary: #7209b7;
+  --color-primary-50: rgba(114, 9, 183, 0.5);
+  --color-black-100: #353535;
+  --color-black-75: #676767;
+  --color-black-50: #9b9b9b;
+  --color-black-25: #cdcdcd;
+  --color-white: #ffffff;
+  --color-white-98: #fafafa;
+  --color-white-97: #f7f7f8;
+
+  --text-display-large: 64px;
+  --text-display: 32px;
+  --text-body: 18px;
+
+  --radius-primary: 10px;
 }
 
 body {
-  @apply font-sans;
+  @apply font-sans text-body text-black-100;
 }
