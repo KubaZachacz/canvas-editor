@@ -40,17 +40,17 @@ The `CanvasEditor` class, located in [`src/CanvasEditor/CanvasEditor.ts`](src/Ca
 
 The following scripts are available in the project:
 
-- **Development**: Start the development server. `pm run dev`
+- **Development**: Start the development server. `npm run dev`
 
-- **Build**: Build the project for production. `pm run build`
+- **Build**: Build the project for production. `npm run build`
 
-- **Lint**: Run ESLint to check for code quality issues. `pm run lint`
+- **Lint**: Run ESLint to check for code quality issues. `npm run lint`
 
-- **Preview**: Preview the production build. `pm run preview`
+- **Preview**: Preview the production build. `npm run preview`
 
-- **Test**: Run tests using Jest. `pm run test`
+- **Test**: Run tests using Jest. `npm run test`
 
-- **SVGR**: Convert SVG files to React components. `pm run svgr`
+- **SVGR**: Convert SVG files to React components. `npm run svgr`
 
 ## Getting Started
 
@@ -60,6 +60,10 @@ The following scripts are available in the project:
 
 3. **Open your browser** and navigate to `http://localhost:3000`.
 
+## Demo
+
+[Try it out](https://canvas-editor-a8757.web.app/)
+
 ## License
 
-This project is licensed under the MIT License."
+This project is licensed under the MIT License.
