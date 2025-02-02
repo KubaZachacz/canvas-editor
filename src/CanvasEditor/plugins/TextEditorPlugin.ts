@@ -327,6 +327,7 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
         this.ensureMinWidthFromPlaceholder(node);
       }
       this.startEditing(node);
+      node.centerPosition();
     }
   }
 }
