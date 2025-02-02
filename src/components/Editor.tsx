@@ -41,7 +41,12 @@ const Editor: React.FC = () => {
       });
       editorRef.current = editor;
 
-      editor.use(new ColorPickerPlugin());
+      editor.use(
+        new ColorPickerPlugin({
+          xOffset: 1,
+          yOffset: 28,
+        })
+      );
       editor.use(new TextEditorPlugin());
     }
 

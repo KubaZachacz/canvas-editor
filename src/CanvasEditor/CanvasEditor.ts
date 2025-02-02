@@ -34,7 +34,7 @@ export class CanvasEditor {
       cursor: "pointer",
     },
     resize: {
-      icon: this.loadIcon("/images/resize.png"),
+      icon: this.loadIcon("/images/resize_arrow.png"),
       offsetX: 1,
       offsetY: 1,
       cursor: "nwse-resize",
@@ -51,7 +51,7 @@ export class CanvasEditor {
     "translate",
     "delete",
     "resize",
-    // "rotate",
+    "rotate",
   ];
 
   // Handle radius for the corner circles
