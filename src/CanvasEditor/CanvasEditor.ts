@@ -33,6 +33,8 @@ export class CanvasEditor {
   private placeholderImage: HTMLImageElement | null = null;
   private showPlaceholder = false;
 
+  private lastCursor: string = "default"; // Cache cursor state
+
   constructor(canvas: HTMLCanvasElement, options?: CanvasEditorOptions) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d")!;
@@ -177,29 +179,65 @@ export class CanvasEditor {
   }
 
   private onMouseMove(event: MouseEvent) {
-    if (!this.dragging || !this.activeNode || !this.activeHandle) return;
+    const { offsetX, offsetY } = event;
 
-    const dx = event.offsetX - this.dragStart.x;
-    const dy = event.offsetY - this.dragStart.y;
+    if (this.dragging && this.activeNode && this.activeHandle) {
+      const dx = offsetX - this.dragStart.x;
+      const dy = offsetY - this.dragStart.y;
 
-    switch (this.activeHandle) {
-      case "translate":
-        // Move the node
-        this.activeNode.move(dx, dy);
-        break;
-      case "rotate":
-        // Rotate the node around its center
-        this.activeNode.updateRotate(event.offsetX, event.offsetY);
-        break;
-      case "resize":
-        // Scale the node
-        this.activeNode.updateResize(event.offsetX, event.offsetY);
-        break;
-      default:
-        break;
+      switch (this.activeHandle) {
+        case "translate":
+          // Move the node
+          this.activeNode.move(dx, dy);
+          break;
+        case "rotate":
+          // Rotate the node around its center
+          this.activeNode.updateRotate(offsetX, offsetY);
+          break;
+        case "resize":
+          // Scale the node
+          this.activeNode.updateResize(offsetX, offsetY);
+          break;
+        default:
+          break;
+      }
+
+      this.dragStart = { x: offsetX, y: offsetY };
+      return;
     }
 
-    this.dragStart = { x: event.offsetX, y: event.offsetY };
+    // Optimize cursor change: Only update if necessary
+    let newCursor = "default";
+
+    if (this.activeNode) {
+      const handleType = this.getHandleClicked(
+        this.activeNode,
+        offsetX,
+        offsetY
+      );
+      if (handleType) {
+        switch (handleType) {
+          case "translate":
+            newCursor = "grab";
+            break;
+          case "rotate":
+            newCursor = "crosshair";
+            break;
+          case "resize":
+            newCursor = "nwse-resize";
+            break;
+          case "delete":
+            newCursor = "pointer";
+            break;
+        }
+      }
+    }
+
+    // Only update the cursor if it has changed
+    if (this.lastCursor !== newCursor) {
+      this.canvas.style.cursor = newCursor;
+      this.lastCursor = newCursor;
+    }
   }
 
   private onMouseUp() {

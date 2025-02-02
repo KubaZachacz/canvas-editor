@@ -10,6 +10,7 @@ export class ColorPickerPlugin implements ICanvasEditorPlugin {
   private yOffset = 16;
   private xOffset = 8;
   private canvasListener?: (e: MouseEvent) => void;
+  private lastCursor: string = "default"; // Cache cursor state
 
   constructor(colors?: string[]) {
     if (colors) this.colors = colors;
@@ -21,6 +22,10 @@ export class ColorPickerPlugin implements ICanvasEditorPlugin {
     this.canvasListener = this.onCanvasMouseDown.bind(this);
     // Use capture phase to ensure we get the event first
     this.editor.canvas.addEventListener("mousedown", this.canvasListener, true);
+    this.editor.canvas.addEventListener(
+      "mousemove",
+      this.onMouseMove.bind(this)
+    ); // Add cursor change listener
   }
 
   /**
@@ -114,6 +119,54 @@ export class ColorPickerPlugin implements ICanvasEditorPlugin {
         event.stopPropagation();
         break;
       }
+    }
+  }
+
+  onMouseMove(event: MouseEvent) {
+    const { offsetX, offsetY } = event;
+    const activeNode = this.editor.activeNode;
+    if (!(activeNode instanceof TextNode)) {
+      this.updateCursor("default");
+      return;
+    }
+
+    const { x, y, width, height, rotation } = activeNode.getBounds(
+      activeNode.transformerPadding
+    );
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+
+    // Convert mouse coords into node's local space
+    const cos = Math.cos(-rotation);
+    const sin = Math.sin(-rotation);
+    const localX =
+      cos * (offsetX - centerX) - sin * (offsetY - centerY) + centerX;
+    const localY =
+      sin * (offsetX - centerX) + cos * (offsetY - centerY) + centerY;
+
+    const pickerX = x + this.xOffset;
+    const pickerY = y + height + this.yOffset;
+
+    let hovering = false;
+
+    for (let index = 0; index < this.colors.length; index++) {
+      const circleX = pickerX + index * (this.circleRadius * 2 + this.spacing);
+      const circleY = pickerY;
+      const distance = Math.hypot(localX - circleX, localY - circleY);
+
+      if (distance <= this.circleRadius) {
+        hovering = true;
+        break;
+      }
+    }
+
+    this.updateCursor(hovering ? "pointer" : "default");
+  }
+
+  private updateCursor(cursor: string) {
+    if (this.lastCursor !== cursor) {
+      this.editor.canvas.style.cursor = cursor;
+      this.lastCursor = cursor;
     }
   }
 }
