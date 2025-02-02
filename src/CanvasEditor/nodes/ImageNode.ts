@@ -3,8 +3,16 @@ import { Node } from "./Node";
  * ImageNode: draws an image that can be moved, scaled, rotated.
  */
 export class ImageNode extends Node {
-  constructor(private img: HTMLImageElement, x: number, y: number) {
+  constructor(
+    private img: HTMLImageElement,
+    x: number,
+    y: number,
+    canvasWidth: number,
+    canvasHeight: number
+  ) {
     super(x, y);
+
+    this.scaleToFit(canvasWidth, canvasHeight);
   }
 
   draw(ctx: CanvasRenderingContext2D) {
@@ -64,5 +72,24 @@ export class ImageNode extends Node {
       height: scaledHeight,
       rotation: this.rotation,
     };
+  }
+
+  scaleToFit(width: number, height: number) {
+    const imgRatio = this.img.width / this.img.height;
+    const canvasRatio = width / height;
+
+    if (this.img.width > width || this.img.height > height) {
+      if (imgRatio > canvasRatio) {
+        // Image is wider than the canvas
+        this.scaleX = width / this.img.width;
+        this.scaleY = width / this.img.width;
+      } else {
+        // Image is taller than the canvas
+        this.scaleX = height / this.img.height;
+        this.scaleY = height / this.img.height;
+      }
+    }
+
+    this.centerPosition();
   }
 }

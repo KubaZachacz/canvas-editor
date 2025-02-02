@@ -91,16 +91,26 @@ export class CanvasEditor {
     this.render();
   }
 
-  addText(text: string, x: number, y: number) {
-    this.addNode(new TextNode(text, x, y));
+  addText(text: string) {
+    this.addNode(
+      new TextNode(text, this.canvas.width / 2, this.canvas.height / 2)
+    );
   }
 
-  async addImage(src: string, x: number, y: number) {
+  async addImage(src: string) {
     const img = new Image();
     img.src = src;
     await new Promise<void>((resolve) => {
       img.onload = () => {
-        this.addNode(new ImageNode(img, x, y));
+        this.addNode(
+          new ImageNode(
+            img,
+            this.canvas.width / 2,
+            this.canvas.height / 2,
+            this.canvas.width,
+            this.canvas.height
+          )
+        );
         resolve();
       };
     });

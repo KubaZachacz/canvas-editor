@@ -61,6 +61,13 @@ export abstract class Node {
     }
   }
 
+  centerPosition() {
+    const { x, y, width, height } = this.getBounds();
+
+    this.x = x - width / 2;
+    this.y = y - height / 2;
+  }
+
   abstract draw(ctx: CanvasRenderingContext2D): void;
   abstract contains(x: number, y: number): boolean;
   abstract getBounds(padding?: number): {

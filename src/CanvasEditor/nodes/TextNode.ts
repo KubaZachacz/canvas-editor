@@ -17,6 +17,7 @@ export class TextNode extends Node {
     super(x, y);
     this.text = text;
     this.textLines = text.split("\n");
+    this.centerPosition();
   }
 
   setText(text: string) {

@@ -207,6 +207,7 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
 
       if (!node.text.length) {
         this.setPlaceholderText(node);
+        node.centerPosition();
       }
     }
   }

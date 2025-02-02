@@ -55,7 +55,7 @@ const Editor: React.FC = () => {
       icon: Img,
       label: "Image",
       onLoad: (src: string) => {
-        editorRef.current?.addImage(src, 100, 100);
+        editorRef.current?.addImage(src);
       },
     },
     {
@@ -68,7 +68,7 @@ const Editor: React.FC = () => {
   ];
 
   const onAddText = () => {
-    editorRef.current?.addText("", 20, 20);
+    editorRef.current?.addText("");
   };
 
   return (
