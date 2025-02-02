@@ -20,7 +20,7 @@ const ActionButton = ({
         className
       )}
     >
-      <Icon className="text-black-75 text-9xl" />
+      <Icon className="text-black-75 text-5xl lg:text-9xl" />
       <span className="font-medium">{children}</span>
     </button>
   );

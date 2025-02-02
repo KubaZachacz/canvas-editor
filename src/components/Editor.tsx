@@ -73,8 +73,8 @@ const Editor: React.FC = () => {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-6 my-16">
-        <div ref={wrapperRef} className="w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2  gap-6 my-16">
+        <div ref={wrapperRef} className="w-full order-1 lg:order-0">
           {canvasSize && (
             <canvas
               ref={canvasRef}
@@ -102,7 +102,7 @@ const Editor: React.FC = () => {
             <div className="bg-white-97 rounded-large font-bold px-4 py-6">
               Add content
             </div>
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-4 lg:gap-8">
               <ActionButton onClick={onAddText} icon={Text}>
                 Text
               </ActionButton>
