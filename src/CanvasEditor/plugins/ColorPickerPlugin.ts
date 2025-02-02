@@ -2,6 +2,12 @@ import { CanvasEditor } from "../CanvasEditor";
 import { TextNode } from "../nodes";
 import { ICanvasEditorPlugin } from "./CanvasEditorPlugin";
 
+interface ColorPickerPluginOptions {
+  colors?: string[];
+  xOffset?: number;
+  yOffset?: number;
+}
+
 export class ColorPickerPlugin implements ICanvasEditorPlugin {
   private editor!: CanvasEditor;
   private colors = ["black", "white", "red", "blue", "green"];
@@ -12,8 +18,10 @@ export class ColorPickerPlugin implements ICanvasEditorPlugin {
   private canvasListener?: (e: MouseEvent) => void;
   private lastCursor: string = "default"; // Cache cursor state
 
-  constructor(colors?: string[]) {
-    if (colors) this.colors = colors;
+  constructor(options?: ColorPickerPluginOptions) {
+    if (options?.colors) this.colors = options.colors;
+    if (options?.xOffset) this.xOffset = options.xOffset;
+    if (options?.yOffset) this.yOffset = options.yOffset;
   }
 
   init(editor: CanvasEditor) {

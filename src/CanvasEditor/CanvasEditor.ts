@@ -18,13 +18,41 @@ export class CanvasEditor {
   // Which handle is being dragged?
   private activeHandle: HandleType | null = null;
 
-  // Store handle images (replace URLs with your own icons)
-  private handleIcons = {
-    translate: this.loadIcon("/images/translate.png"),
-    delete: this.loadIcon("/images/delete.png"),
-    rotate: this.loadIcon("/images/rotate.png"),
-    resize: this.loadIcon("/images/resize.png"),
+  // Handle configuration object
+  private handlesConfig: Record<HandleType, HandleConfig> = {
+    translate: {
+      icon: this.loadIcon("/images/translate.png"),
+      offsetX: 0,
+      offsetY: 0,
+      radius: 20,
+      cursor: "grab",
+    },
+    delete: {
+      icon: this.loadIcon("/images/delete.png"),
+      offsetX: 1,
+      offsetY: 0,
+      cursor: "pointer",
+    },
+    resize: {
+      icon: this.loadIcon("/images/resize.png"),
+      offsetX: 1,
+      offsetY: 1,
+      cursor: "nwse-resize",
+    },
+    rotate: {
+      icon: this.loadIcon("/images/rotate.png"),
+      offsetX: 0,
+      offsetY: 1,
+      cursor: "crosshair",
+    },
   };
+
+  private activeHandles: HandleType[] = [
+    "translate",
+    "delete",
+    "resize",
+    // "rotate",
+  ];
 
   // Handle radius for the corner circles
   private handleRadius = 12;
@@ -187,18 +215,13 @@ export class CanvasEditor {
 
       switch (this.activeHandle) {
         case "translate":
-          // Move the node
           this.activeNode.move(dx, dy);
           break;
         case "rotate":
-          // Rotate the node around its center
           this.activeNode.updateRotate(offsetX, offsetY);
           break;
         case "resize":
-          // Scale the node
           this.activeNode.updateResize(offsetX, offsetY);
-          break;
-        default:
           break;
       }
 
@@ -206,30 +229,16 @@ export class CanvasEditor {
       return;
     }
 
-    // Optimize cursor change: Only update if necessary
+    // Optimize cursor change by checking for handles
     let newCursor = "default";
-
     if (this.activeNode) {
       const handleType = this.getHandleClicked(
         this.activeNode,
         offsetX,
         offsetY
       );
-      if (handleType) {
-        switch (handleType) {
-          case "translate":
-            newCursor = "grab";
-            break;
-          case "rotate":
-            newCursor = "crosshair";
-            break;
-          case "resize":
-            newCursor = "nwse-resize";
-            break;
-          case "delete":
-            newCursor = "pointer";
-            break;
-        }
+      if (handleType && this.handlesConfig[handleType]) {
+        newCursor = this.handlesConfig[handleType].cursor;
       }
     }
 
@@ -282,7 +291,7 @@ export class CanvasEditor {
     const centerX = x + width / 2;
     const centerY = y + height / 2;
 
-    // Draw bounding box (purple)
+    // Draw bounding box
     this.ctx.save();
     this.ctx.translate(centerX, centerY);
     this.ctx.rotate(rotation);
@@ -292,23 +301,23 @@ export class CanvasEditor {
     this.ctx.strokeRect(x, y, width, height);
     this.ctx.restore();
 
-    // Draw the 4 handles:
-    //   Top-left    => translate
-    //   Top-right   => delete
-    //   Bottom-right => resize
-    //   Bottom-left  => rotate
-    //
-    // Define handle positions in local (unrotated) space
-    const handles = [
-      { x, y, icon: this.handleIcons.translate, radius: 20 },
-      { x: x + width, y, icon: this.handleIcons.delete },
-      { x: x + width, y: y + height, icon: this.handleIcons.resize },
-      // { x, y: y + height, icon: this.handleIcons.rotate },
-    ];
+    // Draw active handles dynamically
+    this.activeHandles.forEach((handleType) => {
+      const config = this.handlesConfig[handleType];
+      if (!config) return;
 
-    // Rotate and draw handles
-    handles.forEach(({ x, y, icon, radius }) => {
-      this.drawHandle(x, y, icon, rotation, centerX, centerY, radius);
+      const handleX = x + width * config.offsetX;
+      const handleY = y + height * config.offsetY;
+
+      this.drawHandle(
+        handleX,
+        handleY,
+        config.icon,
+        rotation,
+        centerX,
+        centerY,
+        config.radius
+      );
     });
   }
 
@@ -368,29 +377,26 @@ export class CanvasEditor {
     const centerX = x + width / 2;
     const centerY = y + height / 2;
 
-    // Convert mouse position into node's local (unrotated) space
+    // Convert mouse position into local unrotated space
     const cos = Math.cos(-rotation);
     const sin = Math.sin(-rotation);
     const localX = cos * (mx - centerX) - sin * (my - centerY) + centerX;
     const localY = sin * (mx - centerX) + cos * (my - centerY) + centerY;
 
-    // Define handle positions in local space
-    const handles = [
-      { x, y, type: "translate", radius: 20 },
-      { x: x + width, y, type: "delete" },
-      { x: x + width, y: y + height, type: "resize" },
-      // { x, y: y + height, type: "rotate" },
-    ];
+    for (const handleType of this.activeHandles) {
+      const config = this.handlesConfig[handleType];
+      if (!config) continue;
 
-    // Check if the transformed mouse position is within any handle
-    for (const handle of handles) {
-      const distance = Math.hypot(localX - handle.x, localY - handle.y);
-      const handleRadius = handle.radius || this.handleRadius;
+      const handleX = x + width * config.offsetX;
+      const handleY = y + height * config.offsetY;
+
+      const distance = Math.hypot(localX - handleX, localY - handleY);
+      const handleRadius = config.radius || this.handleRadius;
+
       if (distance <= handleRadius) {
-        return handle.type as HandleType;
+        return handleType;
       }
     }
-
     return null;
   }
 
@@ -487,3 +493,14 @@ export class CanvasEditor {
  * Type of handle.
  */
 type HandleType = "translate" | "delete" | "rotate" | "resize";
+
+/**
+ * Handle configuration with icon, offsets, radius, and cursor type.
+ */
+interface HandleConfig {
+  icon: HTMLImageElement;
+  offsetX: number;
+  offsetY: number;
+  radius?: number;
+  cursor: string;
+}
