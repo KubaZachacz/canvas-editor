@@ -98,7 +98,7 @@ export class ColorPickerPlugin implements ICanvasEditorPlugin {
     const localY =
       sin * (offsetX - centerX) + cos * (offsetY - centerY) + centerY;
 
-    const pickerX = x;
+    const pickerX = x + this.xOffset;
     const pickerY = y + height + this.yOffset;
 
     for (let index = 0; index < this.colors.length; index++) {
