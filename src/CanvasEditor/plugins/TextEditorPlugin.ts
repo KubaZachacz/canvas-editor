@@ -10,18 +10,30 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
   private isEditing = false;
   private cursorVisible = false;
   private cursorPos = { line: 0, char: 0 };
-  private cursorBlinkInterval: NodeJS.Timeout | null = null;
+  private cursorBlinkInterval: ReturnType<typeof setInterval> | null = null;
 
-  // multiline placeholder
   private placeholderText = "Type your text\nhere";
   private placeholderColor = "#818181";
-
-  // current editing node
   private textNode: TextNode | null = null;
+
+  /**
+   * Avoid multiple re-renders in quick succession.
+   */
+  private requestRender = (() => {
+    let frameRequested = false;
+    return () => {
+      if (!frameRequested) {
+        frameRequested = true;
+        requestAnimationFrame(() => {
+          frameRequested = false;
+          this.editor.render();
+        });
+      }
+    };
+  })();
 
   init(editor: CanvasEditor) {
     this.editor = editor;
-
     window.addEventListener("keydown", this.onKeyDown.bind(this));
     this.editor.canvas.addEventListener(
       "mousedown",
@@ -31,6 +43,7 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
 
   destroy() {
     window.removeEventListener("keydown", this.onKeyDown);
+    this.editor.canvas.removeEventListener("mousedown", this.onMouseDown);
     if (this.cursorBlinkInterval) {
       clearInterval(this.cursorBlinkInterval);
     }
@@ -47,13 +60,13 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
     } else {
       this.stopEditing();
     }
-    this.editor.render();
+    this.requestRender();
   }
 
   onKeyDown(event: KeyboardEvent) {
     if (this.isEditing && this.editor.activeNode instanceof TextNode) {
       this.handleTextInput(event);
-      this.editor.render();
+      this.requestRender();
     }
   }
 
@@ -62,7 +75,6 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
     this.editor.activeNode = node;
     this.textNode = node;
 
-    // If no user text, ensure lines = [""]
     if (!node.text) {
       node.setText("");
       this.cursorPos = { line: 0, char: 0 };
@@ -73,13 +85,13 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
       };
     }
 
-    // measure placeholder to enforce minWidth
     this.ensureMinWidthFromPlaceholder(node);
+    this.updateNodeTextMetrics(node);
 
     if (!this.cursorBlinkInterval) {
       this.cursorBlinkInterval = setInterval(() => {
         this.cursorVisible = !this.cursorVisible;
-        this.editor.render();
+        this.requestRender();
       }, 500);
     }
   }
@@ -87,17 +99,13 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
   private stopEditing() {
     this.isEditing = false;
 
-    // If editing node was empty and we never typed, it remains empty => placeholder used
-    // (No direct placeholder injection here; we rely on the plugin's draw logic.)
-
     if (this.cursorBlinkInterval) {
       clearInterval(this.cursorBlinkInterval);
       this.cursorBlinkInterval = null;
     }
-
     this.textNode = null;
     this.cursorPos = { line: 0, char: 0 };
-    this.editor.render();
+    this.requestRender();
   }
 
   private ensureMinWidthFromPlaceholder(node: TextNode) {
@@ -112,40 +120,52 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
     );
     node.minWidth = placeholderWidth;
     node.minLines = lines.length;
+    ctx.restore();
+  }
 
+  /**
+   * Store text metrics in the node (textWidth) to avoid repetitive measurements on every render.
+   */
+  private updateNodeTextMetrics(node: TextNode) {
+    const ctx = this.editor.canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.save();
+    ctx.font = `${node.fontWeight} ${node.fontSize}px ${node.fontFamily}`;
+    const widths = node.textLines.map((line) => ctx.measureText(line).width);
+    node.textWidth = Math.max(...widths, 0);
     ctx.restore();
   }
 
   private handleTextInput(event: KeyboardEvent) {
     const node = this.textNode;
     if (!node) return;
-
     const { key, shiftKey, ctrlKey } = event;
 
-    // SHIFT or CTRL + ENTER => insert newline at cursor
+    // Shift/Ctrl + Enter => new line
     if (key === "Enter" && (shiftKey || ctrlKey)) {
       event.preventDefault();
-      const currentLine = node.textLines[this.cursorPos.line] ?? "";
+      const currentLine = node.textLines[this.cursorPos.line] || "";
       const before = currentLine.slice(0, this.cursorPos.char);
       const after = currentLine.slice(this.cursorPos.char);
 
       node.textLines[this.cursorPos.line] = before;
       node.textLines.splice(this.cursorPos.line + 1, 0, after);
       node.text = node.textLines.join("\n");
-
       this.cursorPos.line++;
       this.cursorPos.char = 0;
+      this.updateNodeTextMetrics(node);
       return;
     }
 
-    // ENTER => stop editing
+    // Enter => stop editing
     if (key === "Enter") {
       event.preventDefault();
       this.stopEditing();
       return;
     }
 
-    // BACKSPACE
+    // Backspace
     if (key === "Backspace") {
       event.preventDefault();
       if (this.cursorPos.char > 0) {
@@ -155,7 +175,6 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
           lineStr.slice(this.cursorPos.char);
         this.cursorPos.char--;
       } else if (this.cursorPos.line > 0) {
-        // merge with previous line
         const removedLine = node.textLines.splice(this.cursorPos.line, 1)[0];
         this.cursorPos.line--;
         const prevLine = node.textLines[this.cursorPos.line];
@@ -163,10 +182,56 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
         node.textLines[this.cursorPos.line] = prevLine + removedLine;
       }
       node.text = node.textLines.join("\n");
+      this.updateNodeTextMetrics(node);
       return;
     }
 
-    // Basic character typing
+    // Arrow key handling
+    if (key === "ArrowLeft") {
+      event.preventDefault();
+      if (this.cursorPos.char > 0) {
+        this.cursorPos.char--;
+      } else if (this.cursorPos.line > 0) {
+        this.cursorPos.line--;
+        this.cursorPos.char = node.textLines[this.cursorPos.line].length;
+      }
+      return;
+    }
+    if (key === "ArrowRight") {
+      event.preventDefault();
+      const lineLength = node.textLines[this.cursorPos.line].length;
+      if (this.cursorPos.char < lineLength) {
+        this.cursorPos.char++;
+      } else if (this.cursorPos.line < node.textLines.length - 1) {
+        this.cursorPos.line++;
+        this.cursorPos.char = 0;
+      }
+      return;
+    }
+    if (key === "ArrowUp") {
+      event.preventDefault();
+      if (this.cursorPos.line > 0) {
+        this.cursorPos.line--;
+        this.cursorPos.char = Math.min(
+          this.cursorPos.char,
+          node.textLines[this.cursorPos.line].length
+        );
+      }
+      return;
+    }
+    if (key === "ArrowDown") {
+      event.preventDefault();
+      if (this.cursorPos.line < node.textLines.length - 1) {
+        this.cursorPos.line++;
+        this.cursorPos.char = Math.min(
+          this.cursorPos.char,
+          node.textLines[this.cursorPos.line].length
+        );
+      }
+      return;
+    }
+
+    // Character typing
     if (key.length === 1) {
       event.preventDefault();
       const lineStr = node.textLines[this.cursorPos.line] || "";
@@ -177,19 +242,12 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
 
       this.cursorPos.char++;
       node.text = node.textLines.join("\n");
+      this.updateNodeTextMetrics(node);
       return;
     }
-
-    // You could add arrow key handling, etc. here
   }
 
-  /**
-   * We draw placeholder (if node has empty text) for all text nodes, not just the active one.
-   * If the node is currently being edited (isEditing && node === textNode), we also draw the cursor if visible.
-   */
   onRender(ctx: CanvasRenderingContext2D) {
-    // The core engine calls each node's draw() first. That draws user text if it exists.
-    // Now we overlay placeholder/cursor for *all* text nodes if needed.
     const textNodes = this.editor.nodes.filter(
       (node) => node instanceof TextNode
     );
@@ -198,11 +256,10 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
       const scaledFontSize = node.fontSize * node.scaleY;
       const linesCount = node.textLines.length || 1;
 
-      // measure either user text or fallback to minWidth for bounding
       const actualWidth = Math.max(node.textWidth, node.minWidth);
       const actualHeight = linesCount * scaledFontSize;
 
-      const { x, y, rotation } = node.getBounds(); // getBounds includes minWidth in width
+      const { x, y, rotation } = node.getBounds();
       const cx = x + actualWidth / 2;
       const cy = y + actualHeight / 2;
 
@@ -211,7 +268,6 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
       ctx.rotate(rotation);
       ctx.translate(-actualWidth / 2, -actualHeight / 2);
 
-      // If node has no user text => show placeholder
       const isNodeEmpty = !node.text;
       if (isNodeEmpty) {
         ctx.font = `${node.fontWeight} ${scaledFontSize}px ${node.fontFamily}`;
@@ -227,17 +283,14 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
         });
       }
 
-      // Draw cursor only if this node is the one currently editing
       if (this.isEditing && node === this.textNode && this.cursorVisible) {
         ctx.font = `${node.fontWeight} ${scaledFontSize}px ${node.fontFamily}`;
         const lines = node.textLines.length ? node.textLines : [""];
-
         const lineStr = lines[this.cursorPos.line] || "";
+
         const typedWidthSoFar = ctx.measureText(
           lineStr.slice(0, this.cursorPos.char)
         ).width;
-
-        // center line within actualWidth
         const fullLineWidth = ctx.measureText(lineStr).width;
         const offsetX = (actualWidth - fullLineWidth) / 2;
         const cursorX = offsetX + typedWidthSoFar;
@@ -253,12 +306,9 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
 
   onAddNode(node: Node): void {
     if (node instanceof TextNode) {
-      // if it's an empty node, measure placeholder for minWidth
       if (!node.text) {
         this.ensureMinWidthFromPlaceholder(node);
       }
-
-      // auto-start editing new text nodes
       this.startEditing(node);
     }
   }
