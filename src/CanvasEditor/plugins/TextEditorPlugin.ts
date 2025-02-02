@@ -140,10 +140,10 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
   private handleTextInput(event: KeyboardEvent) {
     const node = this.textNode;
     if (!node) return;
-    const { key, shiftKey, ctrlKey } = event;
+    const { key, ctrlKey } = event;
 
-    // Shift/Ctrl + Enter => new line
-    if (key === "Enter" && (shiftKey || ctrlKey)) {
+    // Enter =>  new line
+    if (key === "Enter") {
       event.preventDefault();
       const currentLine = node.textLines[this.cursorPos.line] || "";
       const before = currentLine.slice(0, this.cursorPos.char);
@@ -158,10 +158,27 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
       return;
     }
 
-    // Enter => stop editing
-    if (key === "Enter") {
+    // Paste
+    if (ctrlKey && key === "v") {
       event.preventDefault();
-      this.stopEditing();
+      navigator.clipboard.readText().then((text) => {
+        const lines = text.split("\n");
+        const currentLine = node.textLines[this.cursorPos.line] || "";
+        const before = currentLine.slice(0, this.cursorPos.char);
+        const after = currentLine.slice(this.cursorPos.char);
+
+        node.textLines[this.cursorPos.line] = before + lines[0] + after;
+        node.text = node.textLines.join("\n");
+        this.updateNodeTextMetrics(node);
+
+        lines.slice(1).forEach((line) => {
+          this.cursorPos.line++;
+          this.cursorPos.char = 0;
+          node.textLines.splice(this.cursorPos.line, 0, line);
+        });
+        node.text = node.textLines.join("\n");
+        this.updateNodeTextMetrics(node);
+      });
       return;
     }
 
