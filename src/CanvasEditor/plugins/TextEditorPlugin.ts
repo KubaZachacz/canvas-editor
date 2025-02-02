@@ -24,10 +24,7 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
   init(editor: CanvasEditor) {
     this.editor = editor;
     window.addEventListener("keydown", this.onKeyDown.bind(this));
-    this.editor.canvas.addEventListener(
-      "dblclick",
-      this.onDoubleClick.bind(this)
-    );
+
     this.editor.canvas.addEventListener(
       "mousedown",
       this.onMouseDown.bind(this)
@@ -39,17 +36,15 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
     if (this.cursorBlinkInterval) clearInterval(this.cursorBlinkInterval);
   }
 
-  onDoubleClick() {
-    if (this.editor.activeNode instanceof TextNode) {
-      this.startEditing(this.editor.activeNode);
-    }
-  }
-
   onMouseDown(event: MouseEvent) {
     const { offsetX, offsetY } = event;
     const clickedNode = this.editor.nodes
       .filter((node) => node instanceof TextNode)
       .find((node) => node.contains(offsetX, offsetY));
+
+    if (clickedNode instanceof TextNode) {
+      this.startEditing(clickedNode);
+    }
 
     if (!clickedNode) {
       this.stopEditing();
@@ -209,6 +204,8 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
         this.setPlaceholderText(node);
         node.centerPosition();
       }
+
+      this.startEditing(node);
     }
   }
 }
