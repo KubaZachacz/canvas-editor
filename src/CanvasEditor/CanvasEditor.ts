@@ -116,6 +116,15 @@ export class CanvasEditor {
     });
   }
 
+  removeNode(node: Node) {
+    const index = this.nodes.indexOf(node);
+    if (index > -1) {
+      this.nodes.splice(index, 1);
+      this.activeNode = null;
+      this.render();
+    }
+  }
+
   private onMouseDown(event: MouseEvent) {
     const { offsetX, offsetY } = event;
 
@@ -134,12 +143,7 @@ export class CanvasEditor {
 
         if (handleType === "delete") {
           // Remove active node from the array
-          const index = this.nodes.indexOf(this.activeNode);
-          if (index > -1) {
-            this.nodes.splice(index, 1);
-            this.activeNode = null;
-          }
-          this.render();
+          this.removeNode(this.activeNode);
         } else if (handleType === "rotate") {
           // Initialize rotation anchor angle
           this.activeNode.startRotate(offsetX, offsetY);
@@ -205,7 +209,11 @@ export class CanvasEditor {
 
   private onDoubleClick() {}
 
-  private onKeyDown() {}
+  private onKeyDown(event: KeyboardEvent) {
+    if (event.key === "Delete" && this.activeNode) {
+      this.removeNode(this.activeNode);
+    }
+  }
 
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
