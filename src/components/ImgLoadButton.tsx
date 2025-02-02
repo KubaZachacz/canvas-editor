@@ -2,13 +2,14 @@ import React, { useRef } from "react";
 import { ActionButton } from "@/components/ui";
 import { ActionButtonProps } from "./ui/ActionButton";
 
-type ImgLoadButtonProps = Omit<ActionButtonProps, "onClick"> & {
+type ImgLoadButtonProps = Omit<ActionButtonProps, "onClick" | "children"> & {
   onLoaded: (base64: string) => void;
+  label: string;
 };
 
 const ImgLoadButton = ({
   onLoaded,
-  children,
+  label,
   className,
   icon,
 }: ImgLoadButtonProps) => {
@@ -39,7 +40,7 @@ const ImgLoadButton = ({
         className={className}
         type="button"
       >
-        {children}
+        {label}
       </ActionButton>
       <input
         type="file"
@@ -47,6 +48,7 @@ const ImgLoadButton = ({
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
+        data-testid={`file-input-for-${label}`}
       />
     </>
   );

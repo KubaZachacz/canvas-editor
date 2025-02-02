@@ -30,7 +30,9 @@ const WarningModal = ({ onConfirm, ...rest }: WarningModalProps) => {
             >
               Cancel
             </Button>
-            <Button onClick={onReset}>Reset</Button>
+            <Button onClick={onReset} data-testid="reset-confirm">
+              Reset
+            </Button>
           </div>
         </div>
       </div>

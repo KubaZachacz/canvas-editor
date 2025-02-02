@@ -14,6 +14,8 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    "composite": true,
+    "esModuleInterop": true,
 
     /* Linting */
     "strict": true,
@@ -25,5 +27,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "./jest.setup.ts"]
 }

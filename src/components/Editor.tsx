@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CanvasEditor } from "../CanvasEditor/CanvasEditor";
 import { ColorPickerPlugin, TextEditorPlugin } from "../CanvasEditor/plugins";
 import { Background, Img, Logo, Reset, Text } from "./icons";
@@ -81,6 +81,7 @@ const Editor: React.FC = () => {
               width={canvasSize.width}
               height={canvasSize.height}
               className="bg-black-50 select-none"
+              data-testid="canvas"
             />
           )}
         </div>
@@ -112,9 +113,8 @@ const Editor: React.FC = () => {
                   onLoaded={onLoad}
                   icon={Icon}
                   className="bg-white-97 rounded-large font-bold px-4 py-6 flex items-center flex-col gap-6 cursor-pointer"
-                >
-                  {label}
-                </ImgLoadButton>
+                  label={label}
+                />
               ))}
             </div>
           </div>
