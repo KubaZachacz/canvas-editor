@@ -256,7 +256,7 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
       const scaledFontSize = node.fontSize * node.scaleY;
       const linesCount = node.textLines.length || 1;
 
-      const actualWidth = Math.max(node.textWidth, node.minWidth);
+      const actualWidth = Math.max(node.textWidth, node.minWidth * node.scaleX);
       const actualHeight = linesCount * scaledFontSize;
 
       const { x, y, rotation } = node.getBounds();
