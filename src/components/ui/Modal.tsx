@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Close } from "../icons";
@@ -10,9 +10,15 @@ export interface ModalProps {
 }
 
 export default function Modal({ isOpen, onClose, children }: ModalProps) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+
+      if (closeRef.current) {
+        closeRef.current.focus();
+      }
     } else {
       document.body.style.overflow = "auto";
     }
@@ -42,6 +48,7 @@ export default function Modal({ isOpen, onClose, children }: ModalProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <button
+              ref={closeRef}
               className="absolute top-8 right-8 hover:text-black-75 cursor-pointer"
               onClick={onClose}
             >

@@ -89,10 +89,11 @@ const Editor: React.FC = () => {
           <div className="space-y-8 flex-1">
             <div className="flex justify-between items-center">
               <h1 className="text-display font-bold text-black-75">
-                <Logo className="inline text-display-large" /> CanvasEditor
+                <Logo className="inline text-display-large mr-3" />
+                CanvasEditor
               </h1>
               <button
-                className="text-red border-b border-red cursor-pointer"
+                className="text-red border-b border-red cursor-pointer focus:outline-2 outline-primary-50"
                 onClick={() => setIsWarning(true)}
               >
                 Reset
