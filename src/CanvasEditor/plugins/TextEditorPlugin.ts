@@ -313,7 +313,7 @@ export class TextEditorPlugin implements ICanvasEditorPlugin {
         const cursorX = offsetX + typedWidthSoFar;
         const cursorY = this.cursorPos.line * scaledFontSize;
 
-        ctx.fillStyle = isNodeEmpty ? "black" : node.color;
+        ctx.fillStyle = node.color;
         ctx.fillRect(cursorX, cursorY, 2, scaledFontSize * 0.8);
       }
 

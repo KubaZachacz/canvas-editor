@@ -7,7 +7,7 @@ import { Node } from "./Node";
  */
 export class TextNode extends Node {
   fontSize = 20;
-  fontFamily = "Arial";
+  fontFamily = "Poppins";
   fontWeight = "bold";
   text: string;
   textLines: string[]; // actual user text lines
