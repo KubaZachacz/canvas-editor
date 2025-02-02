@@ -1,50 +1,65 @@
-# React + TypeScript + Vite
+# CanvasEditor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+CanvasEditor is a simple canvas editor built with React, TypeScript, and Vite. This project provides a minimal setup to get started with a canvas editor that supports adding text and images, along with plugins for extended functionality.
 
-Currently, two official plugins are available:
+## Core Libraries
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React**: A JavaScript library for building user interfaces.
+- **TypeScript**: A strongly typed programming language that builds on JavaScript.
+- **Vite**: A fast build tool and development server.
+- **Tailwind CSS**: A utility-first CSS framework for rapid UI development.
+- **Framer Motion**: A library for animations and gestures in React.
+- **Jest**: A delightful JavaScript testing framework with a focus on simplicity.
 
-## Expanding the ESLint configuration
+## Project Structure
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+The project is organized into several key directories:
 
-- Configure the top-level `parserOptions` property like this:
+- **src**: Contains the main source code for the project.
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+  - **CanvasEditor**: Core functionality of the canvas editor, including the `CanvasEditor` class and node management.
+  - **components**: Reusable React components used throughout the application.
+  - **plugins**: Plugins to extend the functionality of the canvas editor.
+  - **utils**: Utility functions and helpers.
+  - **icons**: SVG icons used in the application.
+  - **ui**: UI components and styles.
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+This structure helps in maintaining a clean and organized codebase, making it easier to navigate and extend.
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+## CanvasEditor Class
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+The `CanvasEditor` class, located in [`src/CanvasEditor/CanvasEditor.ts`](src/CanvasEditor/CanvasEditor.ts), is the core of the canvas editor. It provides methods to add and manipulate nodes (text and images) on the canvas. The class also supports plugins to extend its functionality.
+
+### Key Features
+
+- **Add Text and Images**: Easily add text and images to the canvas.
+- **Plugins**: Extend functionality with plugins like `ColorPickerPlugin` and `TextEditorPlugin`.
+- **Export and Download**: Export the canvas content as an image and download it.
+
+## Scripts
+
+The following scripts are available in the project:
+
+- **Development**: Start the development server. `pm run dev`
+
+- **Build**: Build the project for production. `pm run build`
+
+- **Lint**: Run ESLint to check for code quality issues. `pm run lint`
+
+- **Preview**: Preview the production build. `pm run preview`
+
+- **Test**: Run tests using Jest. `pm run test`
+
+- **SVGR**: Convert SVG files to React components. `pm run svgr`
+
+## Getting Started
+
+1. **Install dependencies**: `npm install `
+
+2. **Start the development server**: `npm run dev `
+
+3. **Open your browser** and navigate to `http://localhost:3000`.
+
+## License
+
+This project is licensed under the MIT License."
